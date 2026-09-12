@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Αγροτεχνίτης ΤΝ</title>
+<meta name="theme-color" content="#3a7d34">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Αγροτεχνίτης">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  :root{
+    --bg:#eef3ec; --panel:#ffffff; --ink:#1a2620; --muted:#5d6b60; --line:#d3ddd0;
+    --accent:#3a7d34; --accent2:#2b6cb0; --ok:#2f855a; --warn:#b7791f; --bad:#c53030;
+    --soil:#8a6d3b; --sky:#5b9bd8; --leaf:#4a9d4a; --olive:#6b7d2f;
+    --shadow:0 1px 3px rgba(0,0,0,.08),0 6px 18px rgba(0,0,0,.06); --radius:12px;
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --bg:#111713; --panel:#1a221b; --ink:#e6efe6; --muted:#94a596; --line:#2a352b;
+    --accent:#5aa554; --accent2:#5b9bd8; --leaf:#5fb35f; --olive:#9aad55;
+    --shadow:0 1px 3px rgba(0,0,0,.4),0 6px 18px rgba(0,0,0,.3);
+  }}
+  :root[data-theme="dark"]{
+    --bg:#111713; --panel:#1a221b; --ink:#e6efe6; --muted:#94a596; --line:#2a352b;
+    --accent:#5aa554; --accent2:#5b9bd8; --leaf:#5fb35f; --olive:#9aad55;
+    --shadow:0 1px 3px rgba(0,0,0,.4),0 6px 18px rgba(0,0,0,.3);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.45}
+  header{background:linear-gradient(135deg,var(--accent),var(--olive));color:#fff;padding:12px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:20;box-shadow:var(--shadow)}
+  header .logo{font-size:26px}
+  header h1{font-size:18px;margin:0;font-weight:800}
+  header .sub{font-size:12px;opacity:.92}
+  header .spacer{flex:1}
+  header .status{font-size:12px;background:rgba(255,255,255,.18);padding:4px 10px;border-radius:20px;font-weight:600}
+  header .status.off{background:rgba(197,48,48,.5)}
+  .tabs{display:flex;gap:4px;background:var(--panel);padding:6px 8px;position:sticky;top:56px;z-index:19;border-bottom:1px solid var(--line);overflow-x:auto}
+  .tabs button{flex:0 0 auto;background:transparent;border:none;color:var(--muted);font-size:14px;font-weight:600;padding:8px 14px;border-radius:8px;cursor:pointer;white-space:nowrap}
+  .tabs button.active{background:var(--accent);color:#fff}
+  .wrap{max-width:1400px;margin:0 auto;padding:12px}
+  .grid{display:grid;grid-template-columns:360px 1fr;gap:12px;align-items:start}
+  .grid3{display:grid;grid-template-columns:340px 1fr 320px;gap:12px;align-items:start}
+  @media(max-width:1050px){.grid,.grid3{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;margin-bottom:12px}
+  .card h2{font-size:13px;margin:0 0 10px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);display:flex;align-items:center;gap:8px;justify-content:space-between}
+  .card h2 .r{display:flex;gap:6px}
+  .row{display:flex;gap:8px;margin-bottom:10px}
+  .row>*{flex:1}
+  label{display:block;font-size:12px;color:var(--muted);margin-bottom:3px;font-weight:600}
+  input,select,textarea{width:100%;padding:8px 9px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font-size:14px;font-family:inherit}
+  textarea{resize:vertical;min-height:52px}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);border-color:transparent}
+  .hint{font-size:12px;color:var(--muted);margin:-2px 0 10px}
+  .kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:10px}
+  .kpi .box{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px}
+  .kpi .box .v{font-size:20px;font-weight:800;line-height:1.1}
+  .kpi .box .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-top:2px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:6px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.4px}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  .badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:700}
+  .badge.ok{background:rgba(47,133,90,.16);color:var(--ok)}
+  .badge.warn{background:rgba(183,121,31,.16);color:var(--warn)}
+  .badge.bad{background:rgba(197,48,48,.16);color:var(--bad)}
+  .badge.info{background:rgba(43,108,176,.14);color:var(--accent2)}
+  .note{font-size:12.5px;background:var(--bg);border-left:3px solid var(--accent);padding:8px 10px;border-radius:6px;margin:8px 0;color:var(--ink)}
+  .note.warn{border-left-color:var(--warn)} .note.bad{border-left-color:var(--bad)} .note.info{border-left-color:var(--accent2)}
+  .btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .btn{padding:9px 14px;border:none;border-radius:9px;background:var(--accent);color:#fff;font-weight:700;cursor:pointer;font-size:14px}
+  .btn:hover{filter:brightness(1.05)}
+  .btn.sec{background:var(--bg);color:var(--ink);border:1px solid var(--line)}
+  .btn.mini{padding:5px 9px;font-size:12px}
+  .btn.bad{background:var(--bad)}
+  .tabpane{display:none}
+  .tabpane.active{display:block}
+  .inline{display:flex;align-items:center;gap:8px}
+  .small{font-size:12px;color:var(--muted)}
+  .pill{display:inline-block;font-size:11px;padding:2px 8px;border-radius:6px;background:var(--bg);border:1px solid var(--line);margin:2px 3px 2px 0;font-weight:600}
+  .empty{text-align:center;color:var(--muted);padding:24px;font-size:13px}
+  .listitem{border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px;background:var(--bg)}
+  .listitem .top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+  .listitem .nm{font-weight:700;font-size:15px}
+  .listitem .meta{font-size:12px;color:var(--muted);margin-top:2px}
+  .listitem.sel{outline:2px solid var(--accent)}
+  .stage-bar{display:flex;gap:2px;margin:10px 0}
+  .stage-bar .st{flex:1;text-align:center;font-size:10px;padding:6px 2px;background:var(--bg);border:1px solid var(--line);color:var(--muted);border-radius:6px}
+  .stage-bar .st.done{background:rgba(58,125,52,.15);color:var(--accent);border-color:var(--accent)}
+  .stage-bar .st.now{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:700}
+  .advice{margin-bottom:8px}
+  .advice .h{font-weight:700;display:flex;gap:8px;align-items:center;margin-bottom:3px}
+  #dropzone{border:2px dashed var(--line);border-radius:12px;padding:22px;text-align:center;color:var(--muted);cursor:pointer;background:var(--bg)}
+  #dropzone.drag{border-color:var(--accent);color:var(--accent)}
+  .imgwrap{display:flex;gap:12px;flex-wrap:wrap}
+  .imgwrap canvas,.imgwrap img{max-width:260px;border-radius:10px;border:1px solid var(--line)}
+  .bar{height:12px;border-radius:6px;background:var(--bg);overflow:hidden;display:flex}
+  .weatherrow{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;overflow-x:auto}
+  .wday{text-align:center;font-size:11px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 3px}
+  .wday .d{font-weight:700;color:var(--muted)} .wday .t{font-weight:800;font-size:13px} .wday .p{color:var(--accent2)}
+  #map{height:300px;border-radius:10px;border:1px solid var(--line);margin:6px 0;z-index:1}
+  .maptools{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}
+  .leaflet-container{font:inherit}
+  .prog{border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px;background:var(--bg)}
+  .prog .h{font-weight:700;display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}
+  .prog .h .lft{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .prog .why{font-size:12.5px;color:var(--muted);margin-top:4px}
+  .prog.p0{border-left:4px solid var(--bad)} .prog.p1{border-left:4px solid var(--warn)} .prog.p2{border-left:4px solid var(--accent2)} .prog.p3{border-left:4px solid var(--ok)}
+  #installBtn{display:none}
+  @media(max-width:640px){
+    .wrap{padding:8px} header h1{font-size:16px} header .sub{display:none}
+    .card{padding:11px} #map{height:240px}
+    .kpi{grid-template-columns:1fr 1fr} .tabs button{font-size:13px;padding:7px 10px}
+  }
+  @media print{header,.tabs,.no-print,.btnrow,.maptools,#map{display:none!important}.grid,.grid3{grid-template-columns:1fr}.card{break-inside:avoid;box-shadow:none}}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">🌿</div>
+  <div><h1>Αγροτεχνίτης ΤΝ</h1><div class="sub">Έξυπνη γεωργική διαχείριση — Ελιές · Δέντρα · Κηπευτικά</div></div>
+  <div class="spacer"></div>
+  <button class="status" id="installBtn" style="cursor:pointer;border:none">📲 Εγκατάσταση</button>
+  <div class="status" id="netStatus">…</div>
+</header>
+
+<div class="tabs" id="tabs">
+  <button data-tab="dash" class="active">🧭 Σύμβουλος ΤΝ</button>
+  <button data-tab="parcels">🗺️ Αγροτεμάχια &amp; Δέντρα</button>
+  <button data-tab="agenda">📒 Ημερολόγιο εργασιών</button>
+  <button data-tab="program">🗓️ Πρόγραμμα ΤΝ</button>
+  <button data-tab="pheno">🌸 Φαινολογία &amp; Απόδοση</button>
+  <button data-tab="protect">🛡️ Φυτοπροστασία &amp; Άρδευση</button>
+  <button data-tab="vision">📷 Ανάλυση φωτογραφίας</button>
+  <button data-tab="data">💾 Δεδομένα</button>
+</div>
+
+<div class="wrap">
+
+<!-- ============================ DASHBOARD / ADVISOR ============================ -->
+<div class="tabpane active" id="tab-dash">
+  <div class="card">
+    <h2>🧭 Σύμβουλος ΤΝ <span class="r"><button class="btn sec mini" id="refreshAll">🔄 Ανανέωση καιρού &amp; μοντέλων</button></span></h2>
+    <div class="hint">Ο Σύμβουλος συνδυάζει τα δεδομένα σου (αγροτεμάχια, καλλιέργειες, ημερολόγιο) με γεωπονικά μοντέλα και τον καιρό, και παράγει προτεραιοποιημένες ενέργειες. Δουλεύει και offline με τον τελευταίο αποθηκευμένο καιρό.</div>
+    <div class="kpi" id="dashKpi"></div>
+  </div>
+  <div class="grid">
+    <div>
+      <div class="card">
+        <h2>⚠️ Ενέργειες προτεραιότητας</h2>
+        <div id="dashAdvice"><div class="empty">Πρόσθεσε αγροτεμάχια &amp; καλλιέργειες για να δεις προτάσεις.</div></div>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <h2>🌦️ Καιρός (επιλεγμένο αγροτεμάχιο)</h2>
+        <select id="dashParcel"></select>
+        <div id="dashWeather" style="margin-top:10px"></div>
+      </div>
+      <div class="card">
+        <h2>🌡️ Χειροκίνητος καιρός</h2>
+        <div class="hint">Όταν δεν φορτώνει αυτόματα ο καιρός (κινητό/offline), δώσε τρέχουσες τιμές για να τρέξουν τα μοντέλα (δάκος, άρδευση, φαινολογία).</div>
+        <label>Αγροτεμάχιο</label><select id="mwParcel"></select>
+        <div class="row">
+          <div><label>Μέγιστη °C</label><input id="mwTmax" type="number" step="0.5" placeholder="π.χ. 32"></div>
+          <div><label>Ελάχιστη °C</label><input id="mwTmin" type="number" step="0.5" placeholder="π.χ. 20"></div>
+        </div>
+        <div class="row">
+          <div><label>Βροχή εβδ. (mm)</label><input id="mwRain" type="number" step="1" placeholder="0"></div>
+          <div><label>Ημέρες βροχής</label><input id="mwRainDays" type="number" step="1" placeholder="0"></div>
+        </div>
+        <label>Τρέχον GDD από 1/1 (προαιρετικό)</label><input id="mwGdd" type="number" step="10" placeholder="κενό = αυτόματη εκτίμηση">
+        <div class="btnrow"><button class="btn" id="mwSave">💾 Εφαρμογή καιρού</button></div>
+      </div>
+      <div class="card">
+        <h2>💰 Οικονομικά (τρέχον έτος)</h2>
+        <div id="dashCost"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================ PARCELS & TREES ============================ -->
+<div class="tabpane" id="tab-parcels">
+<div class="grid">
+  <div>
+    <div class="card">
+      <h2 id="parcelFormTitle">➕ Νέο αγροτεμάχιο</h2>
+      <label>Ονομασία *</label>
+      <input id="pName" placeholder="π.χ. Ελαιώνας Λακωνίας">
+      <div class="row">
+        <div><label>Έκταση (στρέμματα)</label><input id="pArea" type="number" step="0.1" placeholder="π.χ. 12"></div>
+        <div><label>Έδαφος</label>
+          <select id="pSoil"><option value="">—</option><option>Αμμώδες</option><option>Πηλώδες</option><option>Αργιλώδες</option><option>Ασβεστούχο</option><option>Οργανικό</option></select>
+        </div>
+      </div>
+      <div class="row">
+        <div><label>Γεωγρ. πλάτος (lat)</label><input id="pLat" type="number" step="0.0001" placeholder="π.χ. 37.07"></div>
+        <div><label>Γεωγρ. μήκος (lon)</label><input id="pLon" type="number" step="0.0001" placeholder="π.χ. 22.43"></div>
+      </div>
+      <label style="margin-top:8px">🗺️ Χάρτης — καρφίτσωσε θέση ή σχεδίασε το όριο</label>
+      <div class="maptools">
+        <button class="btn sec mini" id="pGeo">📍 Τρέχουσα θέση (GPS)</button>
+        <button class="btn sec mini" id="mPin">📌 Καρφίτσα</button>
+        <button class="btn sec mini" id="mDraw">✏️ Σχεδίαση ορίου</button>
+        <button class="btn sec mini" id="mUndo">↩️ Αναίρεση</button>
+        <button class="btn sec mini" id="mClear">🗑️ Καθαρισμός</button>
+      </div>
+      <div id="map"></div>
+      <div class="hint" id="mapHint">Πάτησε «Σχεδίαση ορίου» και κάνε κλικ στις γωνίες του χωραφιού — υπολογίζεται αυτόματα η έκταση. «Καρφίτσα» για απλή θέση.</div>
+      <label style="margin-top:8px">Σημειώσεις</label>
+      <textarea id="pNotes" placeholder="Ποτιστικό/ξερικό, κλίση, πρόσβαση…"></textarea>
+      <div class="btnrow">
+        <button class="btn" id="pSave">💾 Αποθήκευση</button>
+        <button class="btn sec" id="pCancel" style="display:none">Άκυρο</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2 id="cropFormTitle">🌳 Προσθήκη καλλιέργειας</h2>
+      <div class="hint" id="cropParcelHint">Επίλεξε πρώτα αγροτεμάχιο από τη λίστα.</div>
+      <label>Είδος</label>
+      <select id="cType"></select>
+      <label>Ποικιλία</label>
+      <select id="cVariety"></select>
+      <div class="row">
+        <div><label id="cCountLbl">Αριθμός δέντρων</label><input id="cCount" type="number" step="1" placeholder="π.χ. 200"></div>
+        <div><label>Έτος φύτευσης</label><input id="cYear" type="number" step="1" placeholder="π.χ. 2008"></div>
+      </div>
+      <div class="row">
+        <div><label>Άρδευση</label><select id="cIrr"><option>Ξερικό</option><option>Στάγδην</option><option>Κατάκλυση</option><option>Εκτοξευτήρες</option></select></div>
+        <div><label>Πέρσι απόδοση (kg/δέντρο)</label><input id="cLast" type="number" step="0.1" placeholder="προαιρετικό"></div>
+      </div>
+      <div class="btnrow">
+        <button class="btn" id="cSave" disabled>💾 Προσθήκη καλλιέργειας</button>
+        <button class="btn sec" id="cCancel" style="display:none">Άκυρο</button>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="card">
+      <h2>🗺️ Τα αγροτεμάχιά μου <span class="r"><span class="small" id="parcelCount"></span></span></h2>
+      <div id="parcelList"><div class="empty">Δεν υπάρχουν αγροτεμάχια ακόμη.</div></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ============================ AGENDA ============================ -->
+<div class="tabpane" id="tab-agenda">
+<div class="grid">
+  <div>
+    <div class="card">
+      <h2 id="logFormTitle">📝 Νέα εργασία / εισροή</h2>
+      <label>Καλλιέργεια / Αγροτεμάχιο</label>
+      <select id="lTarget"></select>
+      <div class="row">
+        <div><label>Ημερομηνία</label><input id="lDate" type="date"></div>
+        <div><label>Κατηγορία</label>
+          <select id="lCat">
+            <option>Ψεκασμός</option><option>Λίπανση</option><option>Άρδευση</option>
+            <option>Κλάδεμα</option><option>Όργωμα/Ζιζάνια</option><option>Συγκομιδή</option>
+            <option>Φύτευση</option><option>Παρατήρηση</option><option>Άλλο</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div><label>Σκεύασμα / Υλικό</label><input id="lProduct" placeholder="π.χ. χαλκός, 11-15-15, Spinosad"></div>
+        <div><label>Δόση / Ποσότητα</label><input id="lDose" placeholder="π.χ. 300 g/100L"></div>
+      </div>
+      <div class="row">
+        <div><label>Κόστος (€)</label><input id="lCost" type="number" step="0.01" placeholder="0"></div>
+        <div><label>Απόδοση συγκομιδής (kg)</label><input id="lYield" type="number" step="0.1" placeholder="μόνο για συγκομιδή"></div>
+      </div>
+      <label>Σημειώσεις</label>
+      <textarea id="lNotes" placeholder="Καιρικές συνθήκες, παρατηρήσεις…"></textarea>
+      <div class="btnrow">
+        <button class="btn" id="lSave">💾 Καταχώρηση</button>
+        <button class="btn sec" id="lCancel" style="display:none">Άκυρο</button>
+      </div>
+      <div class="note info" id="phiNote" style="display:none"></div>
+    </div>
+  </div>
+  <div>
+    <div class="card">
+      <h2>📒 Ημερολόγιο <span class="r">
+        <select id="agFilter" style="width:auto"><option value="">Όλα</option></select>
+      </span></h2>
+      <div id="logList"><div class="empty">Καμία καταχώρηση ακόμη.</div></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ============================ AUTO PROGRAM ============================ -->
+<div class="tabpane" id="tab-program">
+  <div class="card">
+    <h2>🗓️ Αυτόματο πρόγραμμα φροντίδων <span class="r"><button class="btn sec mini" id="progFetch">🌦️ Ανανέωση καιρού &amp; συστάσεων</button></span></h2>
+    <div class="hint">Το πρόγραμμα παράγεται αυτόματα ανά καλλιέργεια, συνδυάζοντας το φαινολογικό στάδιο (GDD), τα μοντέλα κινδύνου (δάκος/μύκητες) και το ισοζύγιο νερού. Κάθε σύσταση καταχωρείται με ένα κλικ στο Ημερολόγιο.</div>
+    <label>Καλλιέργεια</label>
+    <select id="progCrop"></select>
+    <div class="btnrow"><button class="btn sec mini" id="progAll">📋 Πρόγραμμα για όλες τις καλλιέργειες</button></div>
+  </div>
+  <div id="progBox"><div class="empty">Επίλεξε καλλιέργεια για αυτόματες συστάσεις ψεκασμών / λίπανσης / άρδευσης.</div></div>
+</div>
+
+<!-- ============================ PHENOLOGY & YIELD ============================ -->
+<div class="tabpane" id="tab-pheno">
+<div class="grid">
+  <div>
+    <div class="card">
+      <h2>🌸 Επιλογή καλλιέργειας</h2>
+      <select id="phCrop"></select>
+      <div class="hint">Η φαινολογία υπολογίζεται με σωρευτικές βαθμοημέρες (GDD) από 1/1, με βάση τον καιρό του αγροτεμαχίου. Οι τιμές είναι ενδεικτικές — επιβεβαίωσε στο πεδίο.</div>
+      <div class="btnrow"><button class="btn sec mini" id="phFetch">🌦️ Λήψη/ανανέωση καιρού</button></div>
+    </div>
+    <div class="card">
+      <h2>📈 Πρόβλεψη απόδοσης</h2>
+      <div id="yieldBox"><div class="empty">Επίλεξε καλλιέργεια.</div></div>
+    </div>
+  </div>
+  <div>
+    <div class="card">
+      <h2>🌡️ Φαινολογικό στάδιο</h2>
+      <div id="phenoBox"><div class="empty">Επίλεξε καλλιέργεια και κατέβασε καιρό.</div></div>
+    </div>
+    <div class="card">
+      <h2>🗓️ Χρονοδιάγραμμα ενεργειών</h2>
+      <div id="phCalendar"><div class="empty">—</div></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ============================ PROTECTION & IRRIGATION ============================ -->
+<div class="tabpane" id="tab-protect">
+<div class="grid">
+  <div>
+    <div class="card">
+      <h2>🛡️ Επιλογή καλλιέργειας</h2>
+      <select id="prCrop"></select>
+      <div class="btnrow"><button class="btn sec mini" id="prFetch">🌦️ Λήψη/ανανέωση καιρού</button></div>
+      <div class="hint">Μοντέλα κινδύνου βασισμένα σε θερμοκρασία/βροχή/εξατμισοδιαπνοή (ET₀ FAO). Τα κατώφλια είναι επιστημονικά ενδεικτικά και δεν αντικαθιστούν γεωπόνο.</div>
+    </div>
+  </div>
+  <div>
+    <div class="card">
+      <h2>🪰 Κίνδυνος εχθρών &amp; ασθενειών</h2>
+      <div id="pestBox"><div class="empty">Επίλεξε καλλιέργεια.</div></div>
+    </div>
+    <div class="card">
+      <h2>💧 Πρόγραμμα άρδευσης</h2>
+      <div id="irrBox"><div class="empty">Επίλεξε καλλιέργεια.</div></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ============================ VISION ============================ -->
+<div class="tabpane" id="tab-vision">
+<div class="grid">
+  <div>
+    <div class="card">
+      <h2>📷 Φωτογραφία φύλλου / καρπού</h2>
+      <div id="dropzone">📎 Σύρε εδώ ή πάτησε για επιλογή φωτογραφίας<br><span class="small">Η ανάλυση γίνεται τοπικά στη συσκευή σου (offline).</span></div>
+      <input type="file" id="fileInput" accept="image/*" style="display:none">
+      <label style="margin-top:10px">Είδος καλλιέργειας (για στοχευμένη διάγνωση)</label>
+      <select id="visCrop"></select>
+      <div class="imgwrap" id="imgWrap" style="margin-top:10px"></div>
+    </div>
+  </div>
+  <div>
+    <div class="card">
+      <h2>🔬 Αποτέλεσμα ανάλυσης</h2>
+      <div id="visResult"><div class="empty">Ανέβασε φωτογραφία για ανάλυση χρωματικής κατανομής φυλλώματος/καρπού.</div></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ============================ DATA ============================ -->
+<div class="tabpane" id="tab-data">
+  <div class="card" style="max-width:640px;margin:0 auto">
+    <h2>💾 Δεδομένα &amp; αντίγραφα</h2>
+    <p class="small">Όλα τα δεδομένα αποθηκεύονται τοπικά στον browser σου (localStorage). Κράτα τακτικά αντίγραφο.</p>
+    <div class="btnrow">
+      <button class="btn" id="expJson">⬇️ Εξαγωγή αντιγράφου (JSON)</button>
+      <button class="btn sec" id="impJson">⬆️ Εισαγωγή αντιγράφου</button>
+      <input type="file" id="impFile" accept=".json,application/json" style="display:none">
+    </div>
+    <div class="btnrow">
+      <button class="btn sec" id="expCsv">📊 Εξαγωγή ημερολογίου (CSV/Excel)</button>
+      <button class="btn sec" id="printReport">🖨️ Εκτύπωση αναφοράς (PDF)</button>
+    </div>
+    <hr style="border:none;border-top:1px solid var(--line);margin:14px 0">
+    <div class="btnrow">
+      <button class="btn bad" id="clearAll">🗑️ Καθαρισμός όλων</button>
+    </div>
+    <div class="note info" style="margin-top:14px">
+      <b>Πηγή καιρού:</b> Open-Meteo (δωρεάν, χωρίς κλειδί) όταν υπάρχει σύνδεση. Ιστορικό &amp; ET₀ κατά FAO-56.
+      <br><b>Απόρρητο:</b> Δεν στέλνονται προσωπικά δεδομένα πουθενά· μόνο συντεταγμένες προς το Open-Meteo για τον καιρό.
+    </div>
+    <p class="small" id="verLine" style="text-align:center;margin-top:14px"></p>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<script>
+/* ================= ΓΝΩΣΙΑΚΗ ΒΑΣΗ ΚΑΛΛΙΕΡΓΕΙΩΝ (Ελλάδα) =================
+   ΠΗΓΕΣ (ανοιχτές):
+   • kc = συντελεστής καλλιέργειας μεσοπεριόδου (Kc_mid), FAO Irrigation & Drainage Paper 56,
+     Πίν.12 — Allen et al. 1998 (fao.org/4/x0490e/x0490e0b.htm).
+   • tbase = θερμοκρασία βάσης GDD από βιβλιογραφία φαινολογίας (π.χ. ελιά ~9,4°C μοντέλο
+     De Melo-Abreu· εσπεριδοειδή ~13°C· αμπέλι ~10°C· FAO56rev review 2025, ScienceDirect).
+   • Μοντέλο δάκου (Bactrocera oleae): κατώφλι ανάπτυξης ~9–14°C, βέλτιστο 26–30°C, καμία
+     ανάπτυξη >35°C (Springer J.Pest Sci. 2010· PubMed 19825305).
+   Οι σωρευτικές GDD ανά στάδιο & οι αποδόσεις είναι ΕΝΔΕΙΚΤΙΚΕΣ — βαθμονομούνται στο πεδίο.
+   Tbase(°C) · kc(Kc_mid) · yieldPerPlant(kg/φυτό πλήρους παραγωγής) · dako(μόνο ελιά) · unit. */
+const CROPS = {
+  olive: {
+    name:"🫒 Ελιά", unit:"δέντρα", tbase:9, kc:0.65, dako:true, matureYears:7, altBearing:true,
+    yieldPerPlant:{table:22, oil:18}, // επιτραπέζια vs ελαιοποιήσιμη (kg καρπού/δέντρο)
+    varieties:["Κορωνέικη","Καλαμών","Χαλκιδικής","Μανάκι","Αμφίσσης (Κονσερβολιά)","Θρουμπολιά","Μεγαρίτικη","Λιανολιά Κερκύρας","Τσουνάτη","Αδραμυτινή"],
+    stages:[
+      {n:"Ληθαργία",g:0},{n:"Έκπτυξη οφθαλμών",g:220},{n:"Ανθοφορία",g:560},
+      {n:"Καρπόδεση",g:780},{n:"Σκλήρυνση πυρήνα",g:1250},{n:"Περκασμός/ωρίμανση",g:2100},{n:"Συγκομιδή",g:2600}
+    ]
+  },
+  citrus:{name:"🍊 Εσπεριδοειδή",unit:"δέντρα",tbase:13,kc:0.60,dako:false,matureYears:6,
+    yieldPerPlant:{def:60}, varieties:["Πορτοκαλιά","Μανταρινιά","Λεμονιά","Κλημεντίνη","Γκρέιπφρουτ","Νεράντζι"],
+    stages:[{n:"Ληθαργία",g:0},{n:"Έκπτυξη",g:300},{n:"Ανθοφορία",g:600},{n:"Καρπόδεση",g:850},{n:"Ανάπτυξη καρπού",g:1600},{n:"Ωρίμανση",g:2600}]},
+  peach:{name:"🍑 Ροδακινιά/Νεκταρινιά",unit:"δέντρα",tbase:7,kc:0.9,dako:false,matureYears:4,
+    yieldPerPlant:{def:40}, varieties:["Ροδακινιά","Νεκταρινιά"],
+    stages:[{n:"Ληθαργία",g:0},{n:"Διόγκωση οφθαλμών",g:120},{n:"Ανθοφορία",g:260},{n:"Καρπόδεση",g:400},{n:"Ανάπτυξη",g:900},{n:"Ωρίμανση/Συγκομιδή",g:1500}]},
+  apricot:{name:"🟠 Βερικοκιά",unit:"δέντρα",tbase:6,kc:0.9,dako:false,matureYears:4,
+    yieldPerPlant:{def:35}, varieties:["Μπεμπέκου","Διαμαντοπούλου","Άλλη"],
+    stages:[{n:"Ληθαργία",g:0},{n:"Ανθοφορία",g:180},{n:"Καρπόδεση",g:330},{n:"Ανάπτυξη",g:700},{n:"Συγκομιδή",g:1100}]},
+  cherry:{name:"🍒 Κερασιά",unit:"δέντρα",tbase:5,kc:0.9,dako:false,matureYears:5,
+    yieldPerPlant:{def:30}, varieties:["Τραγανά Εδέσσης","Μπακιρτζέικα","Ferrovia","Άλλη"],
+    stages:[{n:"Ληθαργία",g:0},{n:"Ανθοφορία",g:200},{n:"Καρπόδεση",g:360},{n:"Ανάπτυξη",g:650},{n:"Συγκομιδή",g:950}]},
+  apple:{name:"🍎 Μηλιά",unit:"δέντρα",tbase:6,kc:0.95,dako:false,matureYears:5,
+    yieldPerPlant:{def:50}, varieties:["Στάρκιν","Γκόλντεν","Γκάλα","Φούτζι","Γκράνι Σμιθ"],
+    stages:[{n:"Ληθαργία",g:0},{n:"Έκπτυξη",g:150},{n:"Ανθοφορία",g:350},{n:"Καρπόδεση",g:550},{n:"Ανάπτυξη",g:1300},{n:"Συγκομιδή",g:2200}]},
+  pear:{name:"🍐 Αχλαδιά",unit:"δέντρα",tbase:6,kc:0.95,dako:false,matureYears:5,
+    yieldPerPlant:{def:45}, varieties:["Κρυστάλλι","Κοντούλα","Αμπάτε","Άλλη"],
+    stages:[{n:"Ληθαργία",g:0},{n:"Ανθοφορία",g:320},{n:"Καρπόδεση",g:520},{n:"Ανάπτυξη",g:1200},{n:"Συγκομιδή",g:2000}]},
+  almond:{name:"🌰 Αμυγδαλιά",unit:"δέντρα",tbase:7,kc:0.90,dako:false,matureYears:5,
+    yieldPerPlant:{def:8}, varieties:["Τεξας/Μission","Ferragnes","Τρουϊτο","Άλλη"],
+    stages:[{n:"Ληθαργία",g:0},{n:"Ανθοφορία",g:130},{n:"Καρπόδεση",g:300},{n:"Ανάπτυξη",g:900},{n:"Συγκομιδή",g:1800}]},
+  walnut:{name:"🌰 Καρυδιά",unit:"δέντρα",tbase:10,kc:1.10,dako:false,matureYears:7,
+    yieldPerPlant:{def:25}, varieties:["Chandler","Franquette","Άλλη"],
+    stages:[{n:"Ληθαργία",g:0},{n:"Έκπτυξη",g:250},{n:"Ανθοφορία",g:450},{n:"Ανάπτυξη",g:1400},{n:"Συγκομιδή",g:2400}]},
+  pistachio:{name:"🥜 Φιστικιά",unit:"δέντρα",tbase:10,kc:1.10,dako:false,matureYears:7,altBearing:true,
+    yieldPerPlant:{def:10}, varieties:["Αιγίνης","Kerman","Άλλη"],
+    stages:[{n:"Ληθαργία",g:0},{n:"Έκπτυξη",g:300},{n:"Ανθοφορία",g:550},{n:"Ανάπτυξη",g:1600},{n:"Συγκομιδή",g:2500}]},
+  vine:{name:"🍇 Αμπέλι",unit:"πρέμνα",tbase:10,kc:0.7,dako:false,matureYears:3,
+    yieldPerPlant:{def:4}, varieties:["Οινοποιήσιμο","Επιτραπέζιο","Σουλτανίνα"],
+    stages:[{n:"Ληθαργία",g:0},{n:"Έκπτυξη",g:120},{n:"Ανθοφορία",g:400},{n:"Καρπόδεση",g:600},{n:"Περκασμός",g:1300},{n:"Ωρίμανση/Τρύγος",g:1900}]},
+  fig:{name:"🫐 Συκιά",unit:"δέντρα",tbase:9,kc:0.7,dako:false,matureYears:4,
+    yieldPerPlant:{def:25}, varieties:["Καλαμών","Μαύρη","Λευκή"],
+    stages:[{n:"Ληθαργία",g:0},{n:"Έκπτυξη",g:300},{n:"Ανάπτυξη",g:1200},{n:"Συγκομιδή",g:2200}]},
+  pomegranate:{name:"🔴 Ροδιά",unit:"δέντρα",tbase:10,kc:0.85,dako:false,matureYears:4,
+    yieldPerPlant:{def:25}, varieties:["Wonderful","Ερμιόνης","Άλλη"],
+    stages:[{n:"Ληθαργία",g:0},{n:"Ανθοφορία",g:500},{n:"Καρπόδεση",g:800},{n:"Ανάπτυξη",g:1700},{n:"Συγκομιδή",g:2600}]},
+  kiwi:{name:"🥝 Ακτινίδιο",unit:"πρέμνα",tbase:8,kc:1.05,dako:false,matureYears:4,
+    yieldPerPlant:{def:30}, varieties:["Hayward","Κόκκινο","Κίτρινο"],
+    stages:[{n:"Ληθαργία",g:0},{n:"Έκπτυξη",g:250},{n:"Ανθοφορία",g:550},{n:"Ανάπτυξη",g:1500},{n:"Συγκομιδή",g:2400}]},
+  // Κηπευτικά (ετήσια — GDD από φύτευση/σπορά· εδώ ενδεικτικά από 1/1)
+  tomato:{name:"🍅 Ντομάτα",unit:"φυτά",tbase:10,kc:1.15,dako:false,matureYears:0,annual:true,
+    yieldPerPlant:{def:4}, varieties:["Θερμοκηπίου","Υπαίθρια","Βιομηχανική"],
+    stages:[{n:"Φύτευση",g:0},{n:"Βλαστική",g:250},{n:"Άνθηση",g:550},{n:"Καρπόδεση",g:750},{n:"Ωρίμανση/Συγκομιδή",g:1100}]},
+  pepper:{name:"🫑 Πιπεριά",unit:"φυτά",tbase:12,kc:1.05,dako:false,annual:true,
+    yieldPerPlant:{def:2.5}, varieties:["Κέρατο","Φλωρίνης","Καλιφόρνια"],
+    stages:[{n:"Φύτευση",g:0},{n:"Βλαστική",g:280},{n:"Άνθηση",g:600},{n:"Ωρίμανση",g:1050}]},
+  eggplant:{name:"🍆 Μελιτζάνα",unit:"φυτά",tbase:12,kc:1.05,dako:false,annual:true,
+    yieldPerPlant:{def:3}, varieties:["Τσακώνικη","Φλάσκα","Μακρόκαρπη"],
+    stages:[{n:"Φύτευση",g:0},{n:"Βλαστική",g:300},{n:"Άνθηση",g:650},{n:"Συγκομιδή",g:1100}]},
+  cucumber:{name:"🥒 Αγγούρι",unit:"φυτά",tbase:12,kc:1.0,dako:false,annual:true,
+    yieldPerPlant:{def:5}, varieties:["Θερμοκηπίου","Υπαίθριο"],
+    stages:[{n:"Σπορά",g:0},{n:"Βλαστική",g:200},{n:"Άνθηση",g:450},{n:"Συγκομιδή",g:750}]},
+  watermelon:{name:"🍉 Καρπούζι",unit:"φυτά",tbase:12,kc:1.0,dako:false,annual:true,
+    yieldPerPlant:{def:12}, varieties:["Crimson","Sugar Baby","Άλλο"],
+    stages:[{n:"Σπορά",g:0},{n:"Βλαστική",g:350},{n:"Άνθηση",g:650},{n:"Ωρίμανση",g:1200}]},
+  melon:{name:"🍈 Πεπόνι",unit:"φυτά",tbase:12,kc:1.05,dako:false,annual:true,
+    yieldPerPlant:{def:5}, varieties:["Αργους","Θράκης","Άλλο"],
+    stages:[{n:"Σπορά",g:0},{n:"Βλαστική",g:300},{n:"Άνθηση",g:600},{n:"Ωρίμανση",g:1050}]},
+  potato:{name:"🥔 Πατάτα",unit:"φυτά/στρ",tbase:7,kc:1.15,dako:false,annual:true,
+    yieldPerPlant:{def:0.8}, varieties:["Spunta","Marfona","Άλλη"],
+    stages:[{n:"Φύτευση",g:0},{n:"Φύτρωμα",g:200},{n:"Σχηματ. κονδύλων",g:500},{n:"Ωρίμανση",g:1000}]},
+  onion:{name:"🧅 Κρεμμύδι",unit:"φυτά/στρ",tbase:6,kc:1.05,dako:false,annual:true,
+    yieldPerPlant:{def:0.2}, varieties:["Ξηρό","Φρέσκο"],
+    stages:[{n:"Σπορά",g:0},{n:"Βλαστική",g:400},{n:"Σχηματ. βολβού",g:900},{n:"Ωρίμανση",g:1400}]},
+  lettuce:{name:"🥬 Μαρούλι",unit:"φυτά/στρ",tbase:4,kc:1.00,dako:false,annual:true,
+    yieldPerPlant:{def:0.4}, varieties:["Iceberg","Ρωμάνα","Φύλλου"],
+    stages:[{n:"Φύτευση",g:0},{n:"Βλαστική",g:300},{n:"Συγκομιδή",g:650}]}
+};
+
+/* ================= STORAGE ================= */
+const LS_KEY="agro_ai_v1";
+let DB={parcels:[],crops:[],logs:[],weather:{},settings:{}};
+function load(){ try{const r=localStorage.getItem(LS_KEY); if(r) DB=Object.assign(DB,JSON.parse(r));}catch(e){} }
+function save(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(DB)); }catch(e){} }
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt=(n,d=1)=>isFinite(n)?Number(n).toLocaleString('el-GR',{maximumFractionDigits:d}):"—";
+const todayISO=()=>new Date().toISOString().slice(0,10);
+
+/* ================= TABS ================= */
+document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('#tabs button').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.tabpane').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active'); $('tab-'+b.dataset.tab).classList.add('active');
+  if(b.dataset.tab==='dash') renderDash();
+  if(b.dataset.tab==='parcels') setTimeout(initMap,60);
+  if(b.dataset.tab==='program'){fillCropSelect('progCrop'); renderProgram();}
+  if(b.dataset.tab==='pheno') {fillCropSelect('phCrop'); renderPheno();}
+  if(b.dataset.tab==='protect'){fillCropSelect('prCrop'); renderProtect();}
+  if(b.dataset.tab==='vision') fillCropSelect('visCrop',true);
+});
+
+/* ================= NETWORK STATUS ================= */
+function updNet(){ const on=navigator.onLine; const el=$('netStatus');
+  el.textContent = on ? "🟢 Online" : "🔴 Offline"; el.classList.toggle('off',!on); }
+window.addEventListener('online',updNet); window.addEventListener('offline',updNet);
+
+/* ================= WEATHER (Open-Meteo) ================= */
+// Επιστρέφει πίνακα ημερών {date,tmax,tmin,tmean,prcp,et0} από ιστορικό (1/1) + πρόγνωση.
+async function fetchWeather(lat,lon){
+  const y=new Date().getFullYear();
+  const start=`${y}-01-01`;
+  const arcEnd=new Date(Date.now()-4*864e5).toISOString().slice(0,10); // archive ~ έως πριν 4 ημέρες
+  const daily="temperature_2m_max,temperature_2m_min,precipitation_sum,et0_fao_evapotranspiration";
+  const map={};
+  // 1) Ιστορικό εποχής
+  try{
+    const u=`https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}&start_date=${start}&end_date=${arcEnd}&daily=${daily}&timezone=auto`;
+    const d=await (await fetch(u)).json(); addDaily(map,d);
+  }catch(e){}
+  // 2) Πρόσφατο + πρόγνωση 16 ημερών
+  try{
+    const u=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=${daily}&past_days=10&forecast_days=16&timezone=auto`;
+    const d=await (await fetch(u)).json(); addDaily(map,d);
+  }catch(e){}
+  const days=Object.values(map).sort((a,b)=>a.date<b.date?-1:1);
+  if(!days.length) throw new Error("no-data");
+  return days;
+}
+function addDaily(map,d){
+  if(!d||!d.daily||!d.daily.time) return;
+  const t=d.daily;
+  for(let i=0;i<t.time.length;i++){
+    const tmax=t.temperature_2m_max[i], tmin=t.temperature_2m_min[i];
+    if(tmax==null||tmin==null) continue;
+    map[t.time[i]]={date:t.time[i],tmax,tmin,tmean:(tmax+tmin)/2,
+      prcp:t.precipitation_sum[i]||0, et0:t.et0_fao_evapotranspiration[i]||null};
+  }
+}
+async function ensureWeather(parcel,force){
+  if(!parcel||parcel.lat==null||parcel.lon==null) return null;
+  const key=parcel.id, cached=DB.weather[key];
+  const fresh = cached && (Date.now()-cached.ts < 6*3600e3);
+  if(fresh && !force) return cached.days;
+  if(!navigator.onLine){ return cached?cached.days:null; }
+  try{
+    const days=await fetchWeather(parcel.lat,parcel.lon);
+    DB.weather[key]={ts:Date.now(),days}; save(); return days;
+  }catch(e){ return cached?cached.days:null; }
+}
+
+/* ================= AGRONOMIC MODELS ================= */
+function cumulativeGDD(days,tbase){
+  let sum=0; const out=[];
+  for(const d of days){ sum+=Math.max(0,d.tmean-tbase); out.push({date:d.date,gdd:sum,day:d}); }
+  return out;
+}
+function gddToday(gddArr){
+  const t=todayISO(); let last=gddArr[0];
+  for(const g of gddArr){ if(g.date<=t) last=g; else break; }
+  return last?last.gdd:0;
+}
+// Σωρευτικές GDD εποχής: από πραγματικό ιστορικό, ή από χειροκίνητο καιρό (override ή εκτίμηση)
+function seasonGDD(meta,w){
+  if(!w) return 0;
+  if(w.gddOverride!=null) return w.gddOverride;
+  if(w.manual){ const tm=w.days[w.days.length-1].tmean;
+    const doy=Math.floor((Date.now()-new Date(new Date().getFullYear(),0,0))/864e5);
+    return Math.max(0,tm-meta.tbase)*doy; }
+  return gddToday(cumulativeGDD(w.days,meta.tbase));
+}
+function currentStage(crop,gdd){
+  const st=crop.stages; let idx=0;
+  for(let i=0;i<st.length;i++){ if(gdd>=st[i].g) idx=i; }
+  const next=st[idx+1]||null;
+  return {idx,cur:st[idx],next,pctToNext: next? Math.min(100,Math.round((gdd-st[idx].g)/(next.g-st[idx].g)*100)) : 100};
+}
+// Δάκος: μοντέλο ενεργότητας βάσει θερμοκρασίας τελευταίων 14 ημερών.
+// Βέλτιστη δραστηριότητα 20–30°C· <15°C ή >35°C ανασταλτική.
+function dakoRisk(days){
+  const recent=days.slice(-14); if(!recent.length) return null;
+  let score=0,hot=0,ideal=0;
+  for(const d of recent){
+    const tm=d.tmean;
+    if(d.tmax>=35) hot++;
+    if(tm>=20&&tm<=30){score+=2; ideal++;}
+    else if(tm>=16&&tm<32) score+=1;
+    if(d.prcp>2) score+=0.3; // υγρασία ευνοεί
+  }
+  const norm=Math.min(100,Math.round(score/ (recent.length*2.3) *100));
+  let lvl = norm>=65?'high': norm>=35?'med':'low';
+  if(hot>=5) lvl = lvl==='high'?'med':'low'; // καύσωνας μειώνει
+  return {score:norm,lvl,hotDays:hot,idealDays:ideal};
+}
+// Φουζικλάδιο/περονόσπορα (μηλοειδή/αμπέλι): υγρή περίοδος + ήπιες θερμοκρασίες.
+function fungalRisk(days){
+  const recent=days.slice(-7); if(!recent.length) return null;
+  let wet=0,mild=0;
+  for(const d of recent){ if(d.prcp>=1) wet++; if(d.tmean>=12&&d.tmean<=26) mild++; }
+  const norm=Math.min(100,Math.round((wet/7*60)+(mild/7*40)));
+  return {score:norm,lvl:norm>=60?'high':norm>=35?'med':'low',wetDays:wet};
+}
+// Άρδευση: ισοζύγιο νερού τελευταίων 7 ημ. ETc = ET0*Kc, καθαρή ανάγκη = ETc - αποτελεσματική βροχή.
+function irrigationNeed(days,kc){
+  const recent=days.slice(-7); if(!recent.length) return null;
+  let etc=0,eff=0,haveEt0=true;
+  for(const d of recent){
+    const et0 = d.et0!=null ? d.et0 : hargreavesET0(d);
+    if(d.et0==null) haveEt0=false;
+    etc += et0*kc;
+    eff += Math.max(0, d.prcp*0.8); // ~80% αποτελεσματική
+  }
+  const deficit=Math.max(0, etc-eff);
+  // Πρόγνωση βροχής επόμενες 5 ημ
+  const t=todayISO(); const fut=days.filter(d=>d.date>t).slice(0,5);
+  const rainNext=fut.reduce((s,d)=>s+d.prcp,0);
+  return {etc:etc/7, deficit, weekDeficit:deficit, rainNext, approxEt0:!haveEt0};
+}
+function hargreavesET0(d){ // εκτίμηση όταν λείπει ET0 (mm/ημ)
+  const Ra=15; // μέση εξωγήινη ακτινοβολία ενδεικτικά (MJ/m2/ημ)
+  const dt=Math.max(0,d.tmax-d.tmin);
+  return 0.0023*(Ra/2.45)*(d.tmean+17.8)*Math.sqrt(dt);
+}
+// Πρόβλεψη απόδοσης
+function predictYield(crop,cropRec){
+  const meta=CROPS[crop];
+  const n=Number(cropRec.count)||0;
+  let per;
+  if(meta.yieldPerPlant.oil){ per = cropRec.variety && /Κορων|Θρουμπ|Τσουν|Λιανολ/.test(cropRec.variety)? meta.yieldPerPlant.oil: meta.yieldPerPlant.table; }
+  else per = meta.yieldPerPlant.def;
+  // ηλικία
+  let ageF=1; const yr=Number(cropRec.year);
+  if(yr && meta.matureYears){ const age=new Date().getFullYear()-yr;
+    if(age<=1) ageF=0.05; else if(age<meta.matureYears) ageF=0.15+0.85*(age/meta.matureYears);
+  }
+  // άρδευση
+  const irrF = cropRec.irr==='Ξερικό'?0.75:1.0;
+  // παρενιαυτοφορία (ελιά/φιστικιά): εναλλαγή
+  let altF=1, altNote="";
+  if(meta.altBearing){ const even=new Date().getFullYear()%2===0; altF= even?1.15:0.85;
+    altNote = even?"Έτος υψηλής παραγωγής (παρενιαυτοφορία)":"Έτος χαμηλής παραγωγής (παρενιαυτοφορία)"; }
+  let est = n*per*ageF*irrF*altF;
+  // βαθμονόμηση με περσινή πραγματική απόδοση
+  if(cropRec.last){ const lastTotal=Number(cropRec.last)*n; est=(est+lastTotal*(meta.altBearing?altF/ (altF>1?0.85:1.15):1))/2; }
+  return {total:est, per:est/(n||1), ageF, irrF, altF, altNote};
+}
+
+/* ================= PARCELS UI ================= */
+let editParcel=null, selParcel=null, editCrop=null;
+function fillCropTypeSelect(){
+  const s=$('cType'); s.innerHTML='';
+  Object.keys(CROPS).forEach(k=>{const o=document.createElement('option');o.value=k;o.textContent=CROPS[k].name;s.appendChild(o);});
+  s.onchange=()=>fillVarietySelect();
+  fillVarietySelect();
+}
+function fillVarietySelect(){
+  const meta=CROPS[$('cType').value]; const s=$('cVariety'); s.innerHTML='';
+  (meta.varieties||["—"]).forEach(v=>{const o=document.createElement('option');o.textContent=v;s.appendChild(o);});
+  $('cCountLbl').textContent = "Αριθμός ("+meta.unit+")";
+}
+$('pGeo').onclick=()=>{
+  if(!navigator.geolocation){alert("Δεν υποστηρίζεται GPS.");return;}
+  navigator.geolocation.getCurrentPosition(p=>{ $('pLat').value=p.coords.latitude.toFixed(4); $('pLon').value=p.coords.longitude.toFixed(4);},
+    e=>alert("Δεν βρέθηκε θέση: "+e.message),{enableHighAccuracy:true,timeout:8000});
+};
+$('pSave').onclick=()=>{
+  const name=$('pName').value.trim(); if(!name){alert("Δώσε ονομασία.");return;}
+  const rec={id:editParcel||uid(),name,area:parseFloat($('pArea').value)||null,soil:$('pSoil').value,
+    lat:parseFloat($('pLat').value)||null,lon:parseFloat($('pLon').value)||null,notes:$('pNotes').value.trim(),
+    poly: (drawPts.length>=3? drawPts.slice() : (editParcel&&getP(editParcel)?getP(editParcel).poly:null)) };
+  if(editParcel){const i=DB.parcels.findIndex(p=>p.id===editParcel);DB.parcels[i]=rec;} else DB.parcels.push(rec);
+  editParcel=null; save(); clearParcelForm(); renderParcels(); refreshTargets();
+  drawPts=[]; if(map){if(mapPoly){map.removeLayer(mapPoly);mapPoly=null;}if(mapMarker){map.removeLayer(mapMarker);mapMarker=null;}}
+};
+function clearParcelForm(){['pName','pArea','pLat','pLon','pNotes'].forEach(id=>$(id).value='');$('pSoil').value='';
+  $('parcelFormTitle').textContent='➕ Νέο αγροτεμάχιο'; $('pCancel').style.display='none';}
+$('pCancel').onclick=()=>{editParcel=null;clearParcelForm();};
+$('cSave').onclick=()=>{
+  if(!selParcel){alert("Επίλεξε αγροτεμάχιο.");return;}
+  const rec={id:editCrop||uid(),parcelId:selParcel,type:$('cType').value,variety:$('cVariety').value,
+    count:parseInt($('cCount').value)||0,year:parseInt($('cYear').value)||null,irr:$('cIrr').value,last:parseFloat($('cLast').value)||null};
+  if(editCrop){const i=DB.crops.findIndex(c=>c.id===editCrop);DB.crops[i]=rec;}else DB.crops.push(rec);
+  editCrop=null; save(); clearCropForm(); renderParcels(); refreshTargets();
+};
+function clearCropForm(){$('cCount').value='';$('cYear').value='';$('cLast').value='';$('cCancel').style.display='none';$('cropFormTitle').textContent='🌳 Προσθήκη καλλιέργειας';}
+$('cCancel').onclick=()=>{editCrop=null;clearCropForm();};
+
+function renderParcels(){
+  const el=$('parcelList'); $('parcelCount').textContent=DB.parcels.length+" τεμ.";
+  if(!DB.parcels.length){el.innerHTML='<div class="empty">Δεν υπάρχουν αγροτεμάχια ακόμη.</div>';return;}
+  el.innerHTML='';
+  DB.parcels.forEach(p=>{
+    const crops=DB.crops.filter(c=>c.parcelId===p.id);
+    const div=document.createElement('div');
+    div.className='listitem'+(selParcel===p.id?' sel':'');
+    div.innerHTML=`<div class="top"><div>
+        <div class="nm">🗺️ ${esc(p.name)}</div>
+        <div class="meta">${p.area?fmt(p.area)+' στρ.':''} ${p.soil?'· '+esc(p.soil):''} ${p.lat!=null?'· 📍'+p.lat+','+p.lon:'<span class="badge warn">χωρίς GPS</span>'}</div>
+      </div><div class="r" style="display:flex;gap:4px">
+        <button class="btn sec mini" data-act="add">➕🌳</button>
+        <button class="btn sec mini" data-act="edit">✏️</button>
+        <button class="btn sec mini" data-act="del">🗑️</button>
+      </div></div>
+      <div style="margin-top:6px">${crops.length?crops.map(c=>cropChip(c)).join(''):'<span class="small">Καμία καλλιέργεια — πάτησε ➕🌳</span>'}</div>`;
+    div.querySelector('[data-act=add]').onclick=e=>{e.stopPropagation();selParcel=p.id;$('cropParcelHint').textContent='Αγροτεμάχιο: '+p.name;$('cSave').disabled=false;renderParcels();$('cType').scrollIntoView({behavior:'smooth',block:'center'});};
+    div.querySelector('[data-act=edit]').onclick=e=>{e.stopPropagation();editParcelStart(p);};
+    div.querySelector('[data-act=del]').onclick=e=>{e.stopPropagation(); if(confirm('Διαγραφή «'+p.name+'» και των καλλιεργειών του;')){DB.parcels=DB.parcels.filter(x=>x.id!==p.id);DB.crops=DB.crops.filter(x=>x.parcelId!==p.id);delete DB.weather[p.id];save();renderParcels();refreshTargets();}};
+    div.onclick=()=>{selParcel=p.id;$('cropParcelHint').textContent='Αγροτεμάχιο: '+p.name;$('cSave').disabled=false;renderParcels();};
+    // crop chip actions
+    div.querySelectorAll('[data-crop]').forEach(ch=>{
+      ch.querySelector('[data-cact=edit]').onclick=e=>{e.stopPropagation();editCropStart(ch.dataset.crop);};
+      ch.querySelector('[data-cact=del]').onclick=e=>{e.stopPropagation();if(confirm('Διαγραφή καλλιέργειας;')){DB.crops=DB.crops.filter(x=>x.id!==ch.dataset.crop);save();renderParcels();refreshTargets();}};
+    });
+    el.appendChild(div);
+  });
+}
+function cropChip(c){
+  const m=CROPS[c.type]; const age=c.year?(new Date().getFullYear()-c.year)+'ετ.':'';
+  return `<div class="listitem" data-crop="${c.id}" style="padding:6px 8px;margin:6px 0;display:flex;justify-content:space-between;align-items:center">
+    <div><b>${m.name}</b> — ${esc(c.variety||'')} <span class="small">· ${c.count} ${m.unit} ${age?'· '+age:''} · ${esc(c.irr)}</span></div>
+    <div style="display:flex;gap:4px"><button class="btn sec mini" data-cact="edit">✏️</button><button class="btn sec mini" data-cact="del">🗑️</button></div>
+  </div>`;
+}
+function editParcelStart(p){editParcel=p.id;$('pName').value=p.name;$('pArea').value=p.area||'';$('pSoil').value=p.soil||'';$('pLat').value=p.lat??'';$('pLon').value=p.lon??'';$('pNotes').value=p.notes||'';$('parcelFormTitle').textContent='✏️ Επεξεργασία αγροτεμαχίου';$('pCancel').style.display='';
+  drawMode=false;
+  if(map){ if(mapMarker){map.removeLayer(mapMarker);mapMarker=null;} if(mapPoly){map.removeLayer(mapPoly);mapPoly=null;} drawPts=[];
+    if(p.poly&&p.poly.length){drawPts=p.poly.slice();redrawPoly();map.fitBounds(drawPts);} else if(p.lat!=null){setMarker(p.lat,p.lon,false);map.setView([p.lat,p.lon],15);} }
+  window.scrollTo({top:0,behavior:'smooth'});
+  setTimeout(()=>{if(map)map.invalidateSize();},100);
+}
+function editCropStart(id){const c=DB.crops.find(x=>x.id===id);if(!c)return;editCrop=id;selParcel=c.parcelId;$('cType').value=c.type;fillVarietySelect();$('cVariety').value=c.variety;$('cCount').value=c.count;$('cYear').value=c.year||'';$('cIrr').value=c.irr;$('cLast').value=c.last||'';$('cSave').disabled=false;$('cropParcelHint').textContent='Επεξεργασία σε: '+(DB.parcels.find(p=>p.id===c.parcelId)||{}).name;$('cropFormTitle').textContent='✏️ Επεξεργασία καλλιέργειας';$('cCancel').style.display='';}
+
+/* ================= SELECT HELPERS ================= */
+function cropLabel(c){const p=DB.parcels.find(x=>x.id===c.parcelId)||{};return CROPS[c.type].name+' · '+(c.variety||'')+' — '+(p.name||'');}
+function fillCropSelect(selId,withGeneric){
+  const s=$(selId); const prev=s.value; s.innerHTML='';
+  if(withGeneric){Object.keys(CROPS).forEach(k=>{const o=document.createElement('option');o.value='type:'+k;o.textContent=CROPS[k].name;s.appendChild(o);});}
+  DB.crops.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=cropLabel(c);s.appendChild(o);});
+  if(prev)s.value=prev;
+}
+function refreshTargets(){
+  // agenda target
+  const lt=$('lTarget'); const prev=lt.value; lt.innerHTML='';
+  DB.parcels.forEach(p=>{
+    const og=document.createElement('optgroup'); og.label=p.name;
+    const o0=document.createElement('option');o0.value='parcel:'+p.id;o0.textContent='(όλο το τεμάχιο)';og.appendChild(o0);
+    DB.crops.filter(c=>c.parcelId===p.id).forEach(c=>{const o=document.createElement('option');o.value='crop:'+c.id;o.textContent=CROPS[c.type].name+' '+(c.variety||'');og.appendChild(o);});
+    lt.appendChild(og);
+  });
+  if(prev)lt.value=prev;
+  // agenda filter
+  const af=$('agFilter'); const pf=af.value; af.innerHTML='<option value="">Όλα</option>';
+  DB.parcels.forEach(p=>{const o=document.createElement('option');o.value='parcel:'+p.id;o.textContent=p.name;af.appendChild(o);});
+  if(pf)af.value=pf;
+  // dash parcel
+  const dp=$('dashParcel'); const dv=dp.value; dp.innerHTML='';
+  DB.parcels.forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name;dp.appendChild(o);});
+  if(dv)dp.value=dv;
+  const mw=$('mwParcel'); if(mw){const mv=mw.value; mw.innerHTML=''; DB.parcels.forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name;mw.appendChild(o);}); if(mv)mw.value=mv;}
+  fillCropSelect('phCrop');fillCropSelect('prCrop');fillCropSelect('visCrop',true);
+}
+
+/* ================= MAP (Leaflet + OpenStreetMap) ================= */
+let map=null, mapMarker=null, mapPoly=null, drawPts=[], drawMode=false;
+function initMap(){
+  const el=$('map');
+  if(!window.L){ el.innerHTML='<div class="empty">🗺️ Ο χάρτης απαιτεί σύνδεση στο διαδίκτυο (φόρτωση χάρτη/πλακιδίων). Χωρίς σύνδεση, όρισε συντεταγμένες χειροκίνητα.</div>'; return; }
+  if(map){ map.invalidateSize(); return; }
+  const c = (editParcel && getP(editParcel) && getP(editParcel).lat!=null) ? [getP(editParcel).lat,getP(editParcel).lon] : [38.5,23.5];
+  map=L.map('map',{zoomControl:true}).setView(c, editParcel?15:6);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
+  map.on('click',e=>{
+    if(drawMode){ drawPts.push([e.latlng.lat,e.latlng.lng]); redrawPoly(); }
+    else { setMarker(e.latlng.lat,e.latlng.lng,true); }
+  });
+  if(editParcel){ const p=getP(editParcel); if(p.poly&&p.poly.length){drawPts=p.poly.slice();redrawPoly();} else if(p.lat!=null){setMarker(p.lat,p.lon,false);} }
+}
+function getP(id){return DB.parcels.find(x=>x.id===id);}
+function setMarker(lat,lon,fill){
+  if(mapPoly){map.removeLayer(mapPoly);mapPoly=null;} drawPts=[];
+  if(mapMarker)mapMarker.setLatLng([lat,lon]); else mapMarker=L.marker([lat,lon],{draggable:true}).addTo(map);
+  mapMarker.off('dragend').on('dragend',ev=>{const ll=ev.target.getLatLng();$('pLat').value=ll.lat.toFixed(5);$('pLon').value=ll.lng.toFixed(5);});
+  if(fill){$('pLat').value=lat.toFixed(5);$('pLon').value=lon.toFixed(5);}
+}
+function redrawPoly(){
+  if(mapMarker){map.removeLayer(mapMarker);mapMarker=null;}
+  if(mapPoly)map.removeLayer(mapPoly);
+  if(drawPts.length){
+    mapPoly=L.polygon(drawPts,{color:'#3a7d34',weight:2,fillOpacity:0.25}).addTo(map);
+    const cen=polyCentroid(drawPts); $('pLat').value=cen[0].toFixed(5); $('pLon').value=cen[1].toFixed(5);
+    if(drawPts.length>=3){ const str=polyAreaStr(drawPts); $('pArea').value=str.toFixed(2); $('mapHint').textContent='Όριο: '+drawPts.length+' γωνίες · έκταση ≈ '+fmt(str,2)+' στρέμματα.'; }
+    else $('mapHint').textContent='Κάνε κλικ σε ≥3 γωνίες για υπολογισμό έκτασης.';
+  }
+}
+function polyCentroid(pts){let la=0,lo=0;pts.forEach(p=>{la+=p[0];lo+=p[1];});return [la/pts.length,lo/pts.length];}
+function polyAreaStr(pts){ // εμβαδόν σε στρέμματα (1 στρ.=1000 m²) με ισοαπόστημη προβολή
+  const R=6378137, lat0=polyCentroid(pts)[0]*Math.PI/180;
+  const xy=pts.map(p=>[R*(p[1]*Math.PI/180)*Math.cos(lat0), R*(p[0]*Math.PI/180)]);
+  let a=0; for(let i=0;i<xy.length;i++){const j=(i+1)%xy.length; a+=xy[i][0]*xy[j][1]-xy[j][0]*xy[i][1];}
+  return Math.abs(a/2)/1000;
+}
+$('mPin').onclick=()=>{drawMode=false;$('mapHint').textContent='Λειτουργία καρφίτσας: κάνε κλικ στον χάρτη για τη θέση.';};
+$('mDraw').onclick=()=>{drawMode=true;drawPts=[];if(mapPoly){map.removeLayer(mapPoly);mapPoly=null;}$('mapHint').textContent='Λειτουργία σχεδίασης: κάνε κλικ στις γωνίες του χωραφιού.';};
+$('mUndo').onclick=()=>{if(drawMode&&drawPts.length){drawPts.pop();redrawPoly();}};
+$('mClear').onclick=()=>{drawPts=[];if(mapPoly){map.removeLayer(mapPoly);mapPoly=null;}if(mapMarker){map.removeLayer(mapMarker);mapMarker=null;}$('mapHint').textContent='Καθαρίστηκε.';};
+
+/* ================= AGENDA ================= */
+$('lDate').value=todayISO();
+$('lCat').onchange=updatePHI;
+$('lProduct').oninput=updatePHI;
+function updatePHI(){
+  const cat=$('lCat').value, prod=$('lProduct').value.toLowerCase();
+  let msg='';
+  if(cat==='Ψεκασμός'){
+    if(/χαλκ|copper|βορδ/.test(prod)) msg='🔵 Χαλκούχο: τήρησε διάστημα ασφαλείας (PHI) & απόσταση από ανθοφορία μελισσών.';
+    else if(/spinosad|spinetoram/.test(prod)) msg='🐝 Προσοχή στις μέλισσες — ψεκασμός απόγευμα, εκτός ανθοφορίας.';
+    else msg='⚠️ Έλεγξε το εγκεκριμένο PHI (ημέρες πριν τη συγκομιδή) στην ετικέτα του σκευάσματος.';
+  }
+  const n=$('phiNote'); if(msg){n.style.display='';n.textContent=msg;}else n.style.display='none';
+}
+$('lSave').onclick=()=>{
+  if(!$('lTarget').value){alert("Δεν υπάρχει καλλιέργεια/αγροτεμάχιο. Πρόσθεσε πρώτα από την καρτέλα «Αγροτεμάχια».");return;}
+  const rec={id:editLog||uid(),target:$('lTarget').value,date:$('lDate').value,cat:$('lCat').value,
+    product:$('lProduct').value.trim(),dose:$('lDose').value.trim(),cost:parseFloat($('lCost').value)||0,
+    yield:parseFloat($('lYield').value)||null,notes:$('lNotes').value.trim()};
+  if(editLog){const i=DB.logs.findIndex(l=>l.id===editLog);DB.logs[i]=rec;}else DB.logs.push(rec);
+  editLog=null; save(); clearLogForm(); renderLogs();
+};
+let editLog=null;
+function clearLogForm(){['lProduct','lDose','lCost','lYield','lNotes'].forEach(id=>$(id).value='');$('lDate').value=todayISO();$('lCancel').style.display='none';$('logFormTitle').textContent='📝 Νέα εργασία / εισροή';$('phiNote').style.display='none';}
+$('lCancel').onclick=()=>{editLog=null;clearLogForm();};
+$('agFilter').onchange=renderLogs;
+function targetLabel(t){
+  const [k,id]=t.split(':');
+  if(k==='parcel'){const p=DB.parcels.find(x=>x.id===id);return '🗺️ '+(p?p.name:'—');}
+  const c=DB.crops.find(x=>x.id===id); if(!c)return '—';
+  const p=DB.parcels.find(x=>x.id===c.parcelId)||{}; return CROPS[c.type].name+' · '+p.name;
+}
+function renderLogs(){
+  const el=$('logList'); let logs=DB.logs.slice().sort((a,b)=>a.date<b.date?1:-1);
+  const f=$('agFilter').value;
+  if(f){const [_,pid]=f.split(':'); logs=logs.filter(l=>{if(l.target==='parcel:'+pid)return true;const c=DB.crops.find(x=>x.id===l.target.split(':')[1]);return c&&c.parcelId===pid;});}
+  if(!logs.length){el.innerHTML='<div class="empty">Καμία καταχώρηση.</div>';return;}
+  const icon={'Ψεκασμός':'💨','Λίπανση':'🧪','Άρδευση':'💧','Κλάδεμα':'✂️','Όργωμα/Ζιζάνια':'🚜','Συγκομιδή':'🧺','Φύτευση':'🌱','Παρατήρηση':'👁️','Άλλο':'📌'};
+  el.innerHTML=logs.map(l=>`<div class="listitem"><div class="top"><div>
+      <div class="nm">${icon[l.cat]||'📌'} ${esc(l.cat)} ${l.product?'— '+esc(l.product):''}</div>
+      <div class="meta">${l.date} · ${esc(targetLabel(l.target))}${l.dose?' · '+esc(l.dose):''}${l.cost?' · '+fmt(l.cost,2)+'€':''}${l.yield?' · 🧺 '+fmt(l.yield)+'kg':''}</div>
+      ${l.notes?'<div class="small" style="margin-top:4px">'+esc(l.notes)+'</div>':''}
+    </div><div style="display:flex;gap:4px">
+      <button class="btn sec mini" data-e="${l.id}">✏️</button>
+      <button class="btn sec mini" data-d="${l.id}">🗑️</button>
+    </div></div></div>`).join('');
+  el.querySelectorAll('[data-e]').forEach(b=>b.onclick=()=>editLogStart(b.dataset.e));
+  el.querySelectorAll('[data-d]').forEach(b=>b.onclick=()=>{if(confirm('Διαγραφή καταχώρησης;')){DB.logs=DB.logs.filter(x=>x.id!==b.dataset.d);save();renderLogs();}});
+}
+function editLogStart(id){const l=DB.logs.find(x=>x.id===id);if(!l)return;editLog=id;$('lTarget').value=l.target;$('lDate').value=l.date;$('lCat').value=l.cat;$('lProduct').value=l.product||'';$('lDose').value=l.dose||'';$('lCost').value=l.cost||'';$('lYield').value=l.yield||'';$('lNotes').value=l.notes||'';$('lCancel').style.display='';$('logFormTitle').textContent='✏️ Επεξεργασία';updatePHI();window.scrollTo({top:0,behavior:'smooth'});}
+
+/* ================= PHENOLOGY & YIELD ================= */
+async function fetchForCrop(selId){
+  const c=DB.crops.find(x=>x.id===$(selId).value); if(!c){alert("Επίλεξε καλλιέργεια.");return null;}
+  const p=DB.parcels.find(x=>x.id===c.parcelId);
+  if(!p||p.lat==null){alert("Το αγροτεμάχιο δεν έχει συντεταγμένες (GPS). Πρόσθεσέ τες στην καρτέλα «Αγροτεμάχια».");return null;}
+  const days=await ensureWeather(p,true);
+  if(!days){alert(navigator.onLine?"Αποτυχία λήψης καιρού.":"Είσαι offline και δεν υπάρχει αποθηκευμένος καιρός για αυτό το τεμάχιο.");return null;}
+  return {c,p,days};
+}
+$('phCrop').onchange=renderPheno;
+$('phFetch').onclick=async()=>{const r=await fetchForCrop('phCrop');if(r)renderPheno();};
+function renderPheno(){
+  const c=DB.crops.find(x=>x.id===$('phCrop').value);
+  if(!c){$('phenoBox').innerHTML='<div class="empty">Επίλεξε καλλιέργεια.</div>';$('yieldBox').innerHTML='';$('phCalendar').innerHTML='';return;}
+  const meta=CROPS[c.type], p=DB.parcels.find(x=>x.id===c.parcelId);
+  const w=DB.weather[p&&p.id];
+  // yield πάντα
+  const y=predictYield(c.type,c);
+  $('yieldBox').innerHTML=`
+    <div class="kpi"><div class="box"><div class="v">${fmt(y.total,0)} kg</div><div class="l">Εκτ. συνολική παραγωγή</div></div>
+      <div class="box"><div class="v">${fmt(y.per,1)} kg</div><div class="l">μέση/μονάδα (${esc(meta.unit)})</div></div></div>
+    ${meta.name.includes('Ελιά')?'<div class="small">Ελαιόλαδο (απόδοση ~20%): <b>'+fmt(y.total*0.20,0)+' kg / '+fmt(y.total*0.20/0.916,0)+' L</b></div>':''}
+    ${y.altNote?'<div class="note '+(y.altF>1?'ok':'warn')+'">🔄 '+y.altNote+'</div>':''}
+    <div class="small" style="margin-top:6px">Συντελεστές: ηλικία ×${fmt(y.ageF,2)} · άρδευση ×${fmt(y.irrF,2)}${meta.altBearing?' · παρενιαυτ. ×'+fmt(y.altF,2):''}. Εκτίμηση βάσει τυπικών αποδόσεων — βαθμονομείται με την περσινή σου παραγωγή.</div>`;
+  if(!w){$('phenoBox').innerHTML='<div class="note info">Πάτησε «🌦️ Λήψη καιρού» για να υπολογιστεί το φαινολογικό στάδιο με βαθμοημέρες.</div>';$('phCalendar').innerHTML='';return;}
+  const gdd=seasonGDD(meta,w);
+  const stg=currentStage(meta,gdd);
+  $('phenoBox').innerHTML=`
+    <div class="kpi"><div class="box"><div class="v">${fmt(gdd,0)}</div><div class="l">Βαθμοημέρες (GDD) από 1/1</div></div>
+      <div class="box"><div class="v">${esc(stg.cur.n)}</div><div class="l">Τρέχον στάδιο</div></div></div>
+    <div class="stage-bar">${meta.stages.map((s,i)=>`<div class="st ${i<stg.idx?'done':i===stg.idx?'now':''}">${esc(s.n)}</div>`).join('')}</div>
+    ${stg.next?`<div class="small">Πρόοδος προς «${esc(stg.next.n)}»: <b>${stg.pctToNext}%</b> (χρειάζονται ~${fmt(stg.next.g-gdd,0)} GDD ακόμη).</div>`:'<div class="small">Ώριμο στάδιο — περίοδος συγκομιδής.</div>'}
+    <div class="small" style="margin-top:6px">Καιρός ενημερώθηκε: ${new Date(w.ts).toLocaleString('el-GR')}${w.days?' · '+w.days.length+' ημέρες':''}</div>`;
+  // Calendar advice by stage
+  $('phCalendar').innerHTML=phenoAdvice(c.type,stg).map(a=>`<div class="advice"><div class="h">${a.icon} ${esc(a.t)}</div><div class="small">${esc(a.d)}</div></div>`).join('')||'<div class="empty">—</div>';
+}
+function phenoAdvice(type,stg){
+  const s=stg.cur.n, out=[];
+  if(/Ανθοφορία|Άνθηση/.test(s)) out.push({icon:'🐝',t:'Περίοδος ανθοφορίας',d:'Απόφυγε ψεκασμούς που βλάπτουν επικονιαστές. Εξασφάλισε επάρκεια βορίου/νερού για καλή καρπόδεση.'});
+  if(/Καρπόδεση/.test(s)) out.push({icon:'💧',t:'Καρπόδεση',d:'Κρίσιμη περίοδος — απόφυγε υδατικό στρες. Ξεκίνα πρόγραμμα λίπανσης καρπού.'});
+  if(/Σκλήρυνση|Ανάπτυξη/.test(s)) out.push({icon:'🪰',t:'Ανάπτυξη καρπού',d:'Παρακολούθησε εχθρούς (π.χ. δάκος στην ελιά). Τοποθέτησε παγίδες παρακολούθησης.'});
+  if(type==='olive'&&/Σκλήρυνση/.test(s)) out.push({icon:'🎯',t:'Σκλήρυνση πυρήνα',d:'Ο καρπός γίνεται δεκτικός στον δάκο. Ενεργοποίησε το μοντέλο δάκου στην καρτέλα Φυτοπροστασία.'});
+  if(/Ωρίμανση|Περκασμός|Συγκομιδή/.test(s)) out.push({icon:'🧺',t:'Προς συγκομιδή',d:'Σχεδίασε συγκομιδή & εργατικά. Σταμάτησε ψεκασμούς εντός του διαστήματος ασφαλείας (PHI).'});
+  if(/Ληθαργία|Έκπτυξη|Διόγκωση|Φύτευση|Σπορά/.test(s)) out.push({icon:'✂️',t:'Χειμερινές/αρχικές εργασίες',d:'Κλάδεμα, χειμερινοί ψεκασμοί (χαλκός/χειμερινός πολτός), βασική λίπανση εδάφους.'});
+  return out;
+}
+
+/* ================= PROTECTION & IRRIGATION ================= */
+$('prCrop').onchange=renderProtect;
+$('prFetch').onclick=async()=>{const r=await fetchForCrop('prCrop');if(r)renderProtect();};
+function renderProtect(){
+  const c=DB.crops.find(x=>x.id===$('prCrop').value);
+  if(!c){$('pestBox').innerHTML='<div class="empty">Επίλεξε καλλιέργεια.</div>';$('irrBox').innerHTML='';return;}
+  const meta=CROPS[c.type], p=DB.parcels.find(x=>x.id===c.parcelId), w=DB.weather[p&&p.id];
+  if(!w){$('pestBox').innerHTML='<div class="note info">Πάτησε «🌦️ Λήψη καιρού» για τα μοντέλα κινδύνου.</div>';$('irrBox').innerHTML='';return;}
+  const days=w.days;
+  let html='';
+  if(meta.dako){
+    const dk=dakoRisk(days);
+    if(dk){const cls=dk.lvl==='high'?'bad':dk.lvl==='med'?'warn':'ok';const lbl=dk.lvl==='high'?'ΥΨΗΛΟΣ':dk.lvl==='med'?'ΜΕΤΡΙΟΣ':'ΧΑΜΗΛΟΣ';
+      html+=`<div class="advice"><div class="h">🪰 Δάκος ελιάς <span class="badge ${cls}">${lbl} (${dk.score}%)</span></div>
+        <div class="small">Ιδανικές ημέρες (20–30°C): ${dk.idealDays}/14 · Ημέρες καύσωνα (>35°C): ${dk.hotDays}.
+        ${dk.lvl==='high'?' Σύσταση: εντατικοποίησε παρακολούθηση με παγίδες· εξέτασε δολωματικό/καλυπτικό ψεκασμό εγκεκριμένου σκευάσματος μετά τη σκλήρυνση πυρήνα.':dk.lvl==='med'?' Σύσταση: τακτικός έλεγχος παγίδων· ετοιμότητα ψεκασμού.':' Χαμηλή πίεση — συνέχισε παρακολούθηση.'}</div></div>`;}
+  }
+  const fg=fungalRisk(days);
+  if(fg){const cls=fg.lvl==='high'?'bad':fg.lvl==='med'?'warn':'ok';const lbl=fg.lvl==='high'?'ΥΨΗΛΟΣ':fg.lvl==='med'?'ΜΕΤΡΙΟΣ':'ΧΑΜΗΛΟΣ';
+    html+=`<div class="advice"><div class="h">🍄 Μυκητολογικός κίνδυνος <span class="badge ${cls}">${lbl} (${fg.score}%)</span></div>
+      <div class="small">Υγρές ημέρες (τελ. 7): ${fg.wetDays}/7. ${fg.lvl!=='low'?'Ευνοϊκές συνθήκες για ασθένειες φυλλώματος (π.χ. κυκλοκόνιο/κερκόσπορα σε ελιά, φουζικλάδιο σε μηλοειδή, περονόσπορα σε αμπέλι). Εξέτασε προληπτικό χαλκούχο εκτός ανθοφορίας.':'Χαμηλός κίνδυνος — δεν απαιτείται άμεση δράση.'}</div></div>`;}
+  $('pestBox').innerHTML=html||'<div class="empty">—</div>';
+  // Irrigation
+  const irr=irrigationNeed(days,meta.kc);
+  if(irr){
+    const need = c.irr==='Ξερικό' ? null : irr.weekDeficit;
+    const litersPerTree = need!=null ? need : 0; // mm ~ L/m2· ενδεικτικά
+    $('irrBox').innerHTML=`
+      <div class="kpi">
+        <div class="box"><div class="v">${fmt(irr.etc,1)} mm</div><div class="l">Μέση ETc/ημέρα</div></div>
+        <div class="box"><div class="v">${fmt(irr.weekDeficit,1)} mm</div><div class="l">Έλλειμμα 7ημ.</div></div>
+        <div class="box"><div class="v">${fmt(irr.rainNext,1)} mm</div><div class="l">Πρόγνωση βροχής 5ημ.</div></div>
+      </div>
+      ${c.irr==='Ξερικό'
+        ? '<div class="note info">Ξερική καλλιέργεια — δεν προγραμματίζεται άρδευση. Έλλειμμα ενδεικτικό υδατικού στρες: '+fmt(irr.weekDeficit,0)+' mm.</div>'
+        : (irr.rainNext>=irr.weekDeficit*0.8
+            ? '<div class="note ok">🌧️ Αναμένεται επαρκής βροχή ('+fmt(irr.rainNext,0)+' mm) — καθυστέρησε την άρδευση.</div>'
+            : '<div class="note warn">💧 Συνιστάται άρδευση ~<b>'+fmt(Math.max(0,irr.weekDeficit-irr.rainNext),0)+' mm</b> (≈ '+fmt((irr.weekDeficit-irr.rainNext),0)+' L/m² φυτοκαλυμμένης επιφάνειας) την επόμενη εβδομάδα.</div>')}
+      ${irr.approxEt0?'<div class="small">⚠️ Η ET₀ εκτιμήθηκε προσεγγιστικά (Hargreaves) για μέρος των ημερών.</div>':''}`;
+  }
+}
+
+/* ================= AUTO PROGRAM (ψεκασμοί/λίπανση/άρδευση) ================= */
+$('progCrop').onchange=renderProgram;
+$('progFetch').onclick=async()=>{const r=await fetchForCrop('progCrop');if(r)renderProgram();};
+$('progAll').onclick=()=>renderProgram(true);
+// Δημιουργεί αυτόματες συστάσεις για μία καλλιέργεια
+function autoProgram(c){
+  const meta=CROPS[c.type], p=DB.parcels.find(x=>x.id===c.parcelId), w=DB.weather[p&&p.id];
+  const recs=[]; const today=todayISO();
+  let stage=null,gdd=null,dako=null,fungal=null,irr=null;
+  if(w){ gdd=seasonGDD(meta,w); stage=currentStage(meta,gdd).cur.n;
+    if(meta.dako)dako=dakoRisk(w.days); fungal=fungalRisk(w.days); irr=irrigationNeed(w.days,meta.kc); }
+  const S=s=>stage&&new RegExp(s).test(stage);
+  // ---- ΑΡΔΕΥΣΗ ----
+  if(c.irr!=='Ξερικό' && irr){ const net=Math.max(0,irr.weekDeficit-irr.rainNext);
+    if(net>5) recs.push({pri:1,cat:'Άρδευση',icon:'💧',title:'Άρδευση '+fmt(net,0)+' mm',product:'Άρδευση',dose:fmt(net,0)+' mm (~'+fmt(net,0)+' L/m²)',why:'Καιρικό έλλειμμα 7ημ. '+fmt(irr.weekDeficit,0)+' mm, πρόγνωση βροχής '+fmt(irr.rainNext,0)+' mm (ETc·Kc='+meta.kc+').'});
+    else if(irr.rainNext>=irr.weekDeficit) recs.push({pri:3,cat:'Άρδευση',icon:'🌧️',title:'Αναβολή άρδευσης',product:'—',dose:'',why:'Αναμένεται επαρκής βροχή ('+fmt(irr.rainNext,0)+' mm).'});
+  }
+  // ---- ΨΕΚΑΣΜΟΙ / ΦΥΤΟΠΡΟΣΤΑΣΙΑ ----
+  if(meta.dako){
+    const receptive = !stage || S('Σκλήρυνση|Περκασμ|ωρίμαν|Ανάπτυξη|Συγκομιδή');
+    if(dako&&dako.lvl==='high'&&receptive) recs.push({pri:0,cat:'Ψεκασμός',icon:'🪰',title:'Ψεκασμός κατά δάκου',product:'Εγκεκριμένο εντομοκτόνο δάκου (δολωματικός/καλυπτικός)',dose:'κατά ετικέτα',why:'Υψηλός κίνδυνος δάκου ('+dako.score+'%) & καρπός δεκτικός. Τήρησε το διάστημα ασφαλείας (PHI).'});
+    else if(dako&&dako.lvl!=='low') recs.push({pri:1,cat:'Παρατήρηση',icon:'🪤',title:'Παγίδες δάκου — έλεγχος',product:'Παγίδες παρακολούθησης',dose:'',why:'Μέτριος κίνδυνος ('+dako.score+'%). Έλεγξε συλλήψεις πριν ψεκάσεις.'});
+    if(S('Σκλήρυνση')) recs.push({pri:2,cat:'Παρατήρηση',icon:'🎯',title:'Τοποθέτηση παγίδων δάκου',product:'Παγίδες McPhail/δελτο',dose:'',why:'Ο καρπός γίνεται δεκτικός στον δάκο μετά τη σκλήρυνση πυρήνα.'});
+  }
+  if(fungal&&fungal.lvl==='high'&&!S('Ανθοφορία|Άνθηση')) recs.push({pri:1,cat:'Ψεκασμός',icon:'🍄',title:'Προληπτικός ψεκασμός μυκήτων',product:'Χαλκούχο σκεύασμα',dose:'κατά ετικέτα',why:'Υγρές συνθήκες ('+fungal.wetDays+'/7 ημ.) ευνοούν ασθένειες φυλλώματος. Εκτός ανθοφορίας.'});
+  if(S('Ληθαργία|Έκπτυξη|Διόγκωση')) recs.push({pri:2,cat:'Ψεκασμός',icon:'❄️',title:'Χειμερινός ψεκασμός',product:'Χαλκός + χειμερινός πολτός (θειασβέστιο/λάδι)',dose:'κατά ετικέτα',why:'Χειμερινή προστασία: διαχειμάζοντα έντομα (κοκκοειδή) & μυκητολογικά inoculum.'});
+  // ---- ΛΙΠΑΝΣΗ ----
+  if(S('Έκπτυξη|Διόγκωση|Βλαστική|Φύτευση|Σπορά')) recs.push({pri:2,cat:'Λίπανση',icon:'🌱',title:'Ανοιξιάτικη/βασική λίπανση',product:'Αζωτούχο (π.χ. 20-10-10) ή σύνθετο',dose:'βάσει εδαφολογικής',why:'Έναρξη βλάστησης — κάλυψη αναγκών αζώτου.'});
+  if(S('Ανθοφορία|Άνθηση')) recs.push({pri:2,cat:'Λίπανση',icon:'🐝',title:'Φυλλική λίπανση καρπόδεσης',product:'Βόριο + άζωτο (φυλλικό)',dose:'κατά ετικέτα',why:'Βελτίωση γονιμοποίησης/καρπόδεσης. Απόφυγε εντομοκτόνα στην ανθοφορία (μέλισσες).'});
+  if(S('Καρπόδεση|Ανάπτυξη|Σχηματ')) recs.push({pri:2,cat:'Λίπανση',icon:'🧪',title:'Λίπανση ανάπτυξης καρπού',product:'Κάλιο-άζωτο (π.χ. 12-12-17)',dose:'βάσει αναγκών',why:'Στάδιο διόγκωσης καρπού — αυξημένη απαίτηση καλίου.'});
+  // ---- ΚΛΑΔΕΜΑ / ΣΥΓΚΟΜΙΔΗ ----
+  if(S('Ληθαργία') && !meta.annual) recs.push({pri:3,cat:'Κλάδεμα',icon:'✂️',title:'Χειμερινό κλάδεμα',product:'—',dose:'',why:'Περίοδος ληθαργίας — κλάδεμα καρποφορίας/διαμόρφωσης & αερισμός κόμης.'});
+  if(S('Ωρίμανση|Περκασμ|Συγκομιδή')) recs.push({pri:1,cat:'Συγκομιδή',icon:'🧺',title:'Προγραμματισμός συγκομιδής',product:'—',dose:'',why:'Στάδιο ωρίμανσης. Σταμάτησε ψεκασμούς εντός του διαστήματος ασφαλείας (PHI) & οργάνωσε εργατικά.'});
+  // Χωρίς καιρό: γενική υπενθύμιση
+  if(!w) recs.push({pri:2,cat:'Παρατήρηση',icon:'📍',title:'Ενεργοποίηση μοντέλων',product:'—',dose:'',why:'Πρόσθεσε GPS στο αγροτεμάχιο & κατέβασε καιρό για εξατομικευμένο πρόγραμμα ψεκασμών/λίπανσης/άρδευσης.'});
+  return {stage,gdd,recs:recs.sort((a,b)=>a.pri-b.pri)};
+}
+function renderProgram(all){
+  fillCropSelect('progCrop');
+  const crops = all===true ? DB.crops : DB.crops.filter(c=>c.id===$('progCrop').value);
+  if(!crops.length){$('progBox').innerHTML='<div class="empty">Δεν υπάρχει καλλιέργεια. Πρόσθεσε από την καρτέλα «Αγροτεμάχια».</div>';return;}
+  let html='';
+  crops.forEach(c=>{
+    const meta=CROPS[c.type], p=DB.parcels.find(x=>x.id===c.parcelId), pr=autoProgram(c);
+    html+=`<div class="card"><h2>${meta.name} · ${esc(c.variety||'')} <span class="small">${esc(p?p.name:'')}${pr.stage?' · '+esc(pr.stage)+' ('+fmt(pr.gdd,0)+' GDD)':''}</span></h2>`;
+    if(!pr.recs.length){html+='<div class="empty">Καμία ενέργεια αυτή τη στιγμή.</div></div>';return;}
+    pr.recs.forEach((r,i)=>{
+      const plbl=['ΕΠΕΙΓΟΝ','ΥΨΗΛΗ','ΣΥΝΙΣΤΑΤΑΙ','ΠΛΗΡΟΦΟΡΙΑ'][r.pri];
+      html+=`<div class="prog p${r.pri}"><div class="h"><div class="lft">${r.icon} <b>${esc(r.title)}</b> <span class="badge ${['bad','warn','info','ok'][r.pri]}">${plbl}</span> <span class="pill">${esc(r.cat)}</span></div>
+        ${r.product&&r.product!=='—'?`<button class="btn mini" data-add='${encodeURIComponent(JSON.stringify({t:c.id,cat:r.cat,product:r.product,dose:r.dose||'',notes:r.title}))}'>➕ Ημερολόγιο</button>`:''}</div>
+        ${r.product&&r.product!=='—'?`<div class="small" style="margin-top:3px">💊 ${esc(r.product)}${r.dose?' — '+esc(r.dose):''}</div>`:''}
+        <div class="why">${esc(r.why)}</div></div>`;
+    });
+    html+='</div>';
+  });
+  $('progBox').innerHTML=html;
+  $('progBox').querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>addToAgenda(JSON.parse(decodeURIComponent(b.dataset.add))));
+}
+function addToAgenda(o){
+  document.querySelector('#tabs button[data-tab=agenda]').click();
+  $('lTarget').value='crop:'+o.t; $('lDate').value=todayISO(); $('lCat').value=o.cat;
+  $('lProduct').value=o.product||''; $('lDose').value=o.dose||''; $('lNotes').value='Από αυτόματο πρόγραμμα ΤΝ: '+(o.notes||'');
+  updatePHI(); window.scrollTo({top:0,behavior:'smooth'});
+  $('lProduct').style.transition='background .3s'; $('lProduct').style.background='rgba(58,125,52,.15)';
+  setTimeout(()=>$('lProduct').style.background='',900);
+}
+
+/* ================= MANUAL WEATHER (fallback χωρίς σύνδεση/artifact) ================= */
+$('mwSave').onclick=()=>{
+  const pid=$('mwParcel').value; if(!pid){alert('Πρόσθεσε πρώτα αγροτεμάχιο.');return;}
+  const tmax=parseFloat($('mwTmax').value), tmin=parseFloat($('mwTmin').value);
+  if(isNaN(tmax)||isNaN(tmin)){alert('Δώσε Μέγιστη και Ελάχιστη θερμοκρασία.');return;}
+  const rainWeek=parseFloat($('mwRain').value)||0, rainDays=Math.max(0,parseInt($('mwRainDays').value)||0);
+  const gddNow=parseFloat($('mwGdd').value);
+  const days=[]; const today=new Date();
+  const step = rainDays>0 ? Math.max(1,Math.round(7/rainDays)) : 99;
+  for(let i=27;i>=0;i--){ const d=new Date(today.getTime()-i*864e5);
+    let prcp=0; if(i<7 && rainDays>0 && (i%step===0)) prcp=rainWeek/rainDays;
+    days.push({date:d.toISOString().slice(0,10),tmax,tmin,tmean:(tmax+tmin)/2,prcp,et0:null}); }
+  DB.weather[pid]={ts:Date.now(),days,manual:true,gddOverride:isNaN(gddNow)?null:gddNow};
+  save(); renderDash();
+  const b=$('mwSave'); b.textContent='✅ Εφαρμόστηκε'; setTimeout(()=>b.textContent='💾 Εφαρμογή καιρού',1500);
+};
+
+/* ================= DASHBOARD ================= */
+$('dashParcel').onchange=renderDash;
+$('refreshAll').onclick=async()=>{
+  $('refreshAll').textContent='⏳ Ανανέωση…';
+  for(const p of DB.parcels){ if(p.lat!=null) await ensureWeather(p,true); }
+  $('refreshAll').textContent='🔄 Ανανέωση καιρού & μοντέλων';
+  renderDash();
+};
+function renderDash(){
+  refreshTargets();
+  // KPIs
+  const trees=DB.crops.reduce((s,c)=>s+(c.count||0),0);
+  const area=DB.parcels.reduce((s,p)=>s+(p.area||0),0);
+  let totalYield=0; DB.crops.forEach(c=>totalYield+=predictYield(c.type,c).total);
+  const yearCost=DB.logs.filter(l=>l.date>=new Date().getFullYear()+'-01-01').reduce((s,l)=>s+(l.cost||0),0);
+  $('dashKpi').innerHTML=`
+    <div class="box"><div class="v">${DB.parcels.length}</div><div class="l">Αγροτεμάχια</div></div>
+    <div class="box"><div class="v">${fmt(area,0)} στρ.</div><div class="l">Συνολική έκταση</div></div>
+    <div class="box"><div class="v">${fmt(trees,0)}</div><div class="l">Δέντρα/φυτά</div></div>
+    <div class="box"><div class="v">${fmt(totalYield,0)} kg</div><div class="l">Εκτ. παραγωγή</div></div>
+    <div class="box"><div class="v">${fmt(yearCost,0)} €</div><div class="l">Κόστος έτους</div></div>`;
+  // Advice
+  const adv=buildAdvice();
+  $('dashAdvice').innerHTML = adv.length? adv.map(a=>`<div class="note ${a.cls}"><b>${a.icon} ${esc(a.t)}</b><br>${esc(a.d)}</div>`).join('')
+    : '<div class="empty">✅ Καμία επείγουσα ενέργεια. Κατέβασε καιρό (🔄) για ενεργά μοντέλα.</div>';
+  // Weather panel
+  const pid=$('dashParcel').value; const w=DB.weather[pid];
+  if(w){ const days=w.days; const t=todayISO();
+    const fut=days.filter(d=>d.date>=t).slice(0,7);
+    $('dashWeather').innerHTML='<div class="weatherrow" style="grid-template-columns:repeat('+fut.length+',1fr)">'+fut.map(d=>{
+      const dd=new Date(d.date);const wd=['Κυ','Δε','Τρ','Τε','Πε','Πα','Σα'][dd.getDay()];
+      return `<div class="wday"><div class="d">${wd} ${dd.getDate()}/${dd.getMonth()+1}</div><div class="t">${Math.round(d.tmax)}°</div><div class="small">${Math.round(d.tmin)}°</div><div class="p">${d.prcp>0?'💧'+fmt(d.prcp,0):''}</div></div>`;
+    }).join('')+'</div><div class="small" style="margin-top:6px">Ενημ.: '+new Date(w.ts).toLocaleString('el-GR')+'</div>';
+  } else $('dashWeather').innerHTML='<div class="note info">Το επιλεγμένο τεμάχιο δεν έχει αποθηκευμένο καιρό. Βεβαιώσου ότι έχει GPS και πάτησε «🔄 Ανανέωση».</div>';
+  // Cost breakdown
+  const byCat={}; DB.logs.filter(l=>l.date>=new Date().getFullYear()+'-01-01').forEach(l=>{byCat[l.cat]=(byCat[l.cat]||0)+(l.cost||0);});
+  const rows=Object.entries(byCat).filter(e=>e[1]>0).sort((a,b)=>b[1]-a[1]);
+  $('dashCost').innerHTML = rows.length? '<table><tr><th>Κατηγορία</th><th class="num">€</th></tr>'+rows.map(r=>`<tr><td>${esc(r[0])}</td><td class="num">${fmt(r[1],2)}</td></tr>`).join('')+`<tr><td><b>Σύνολο</b></td><td class="num"><b>${fmt(yearCost,2)}</b></td></tr></table>` : '<div class="empty">Δεν έχουν καταχωρηθεί κόστη φέτος.</div>';
+}
+function buildAdvice(){
+  const out=[];
+  DB.crops.forEach(c=>{
+    const meta=CROPS[c.type], p=DB.parcels.find(x=>x.id===c.parcelId), w=DB.weather[p&&p.id];
+    const nm=meta.name+' · '+(p?p.name:'');
+    if(!p||p.lat==null){ out.push({cls:'info',icon:'📍',t:nm,d:'Πρόσθεσε συντεταγμένες (GPS) στο αγροτεμάχιο για να ενεργοποιηθούν τα μοντέλα καιρού.'}); return; }
+    if(!w) return;
+    const days=w.days;
+    if(meta.dako){const dk=dakoRisk(days); if(dk&&dk.lvl!=='low') out.push({cls:dk.lvl==='high'?'bad':'warn',icon:'🪰',t:'Δάκος — '+nm,d:'Κίνδυνος '+(dk.lvl==='high'?'ΥΨΗΛΟΣ':'ΜΕΤΡΙΟΣ')+' ('+dk.score+'%). Έλεγξε παγίδες· δες καρτέλα Φυτοπροστασία.'});}
+    const fg=fungalRisk(days); if(fg&&fg.lvl==='high') out.push({cls:'warn',icon:'🍄',t:'Μυκητολ. κίνδυνος — '+nm,d:'Υγρές συνθήκες ('+fg.wetDays+'/7 ημ.). Εξέτασε προληπτική φυτοπροστασία.'});
+    if(c.irr!=='Ξερικό'){const irr=irrigationNeed(days,meta.kc); if(irr&&irr.weekDeficit-irr.rainNext>8) out.push({cls:'info',icon:'💧',t:'Άρδευση — '+nm,d:'Συνιστάται ~'+fmt(irr.weekDeficit-irr.rainNext,0)+' mm την επόμενη εβδομάδα (καιρικό έλλειμμα).'});}
+    const stg=currentStage(meta,seasonGDD(meta,w));
+    if(/Ανθοφορία|Άνθηση/.test(stg.cur.n)) out.push({cls:'ok',icon:'🐝',t:'Ανθοφορία — '+nm,d:'Απόφυγε ψεκασμούς επιβλαβείς για μέλισσες· κρίσιμη περίοδος για την καρπόδεση.'});
+  });
+  // PHI/spray reminders from recent logs already handled elsewhere
+  return out.sort((a,b)=>({bad:0,warn:1,ok:2,info:3}[a.cls]-{bad:0,warn:1,ok:2,info:3}[b.cls]));
+}
+
+/* ================= VISION (offline color analysis) ================= */
+const dz=$('dropzone'), fi=$('fileInput');
+dz.onclick=()=>fi.click();
+dz.ondragover=e=>{e.preventDefault();dz.classList.add('drag');};
+dz.ondragleave=()=>dz.classList.remove('drag');
+dz.ondrop=e=>{e.preventDefault();dz.classList.remove('drag');if(e.dataTransfer.files[0])handleImage(e.dataTransfer.files[0]);};
+fi.onchange=()=>{if(fi.files[0])handleImage(fi.files[0]);};
+function handleImage(file){
+  const img=new Image();
+  img.onload=()=>{
+    const cw=$('imgWrap'); cw.innerHTML='';
+    const c=document.createElement('canvas'); const scale=Math.min(1,300/img.width); c.width=img.width*scale; c.height=img.height*scale;
+    const ctx=c.getContext('2d'); ctx.drawImage(img,0,0,c.width,c.height); cw.appendChild(c);
+    analyzeImage(ctx,c.width,c.height);
+  };
+  img.src=URL.createObjectURL(file);
+}
+function analyzeImage(ctx,w,h){
+  const data=ctx.getImageData(0,0,w,h).data;
+  let green=0,yellow=0,brown=0,dark=0,other=0,total=0;
+  for(let i=0;i<data.length;i+=16){ // δειγματοληψία
+    const r=data[i],g=data[i+1],b=data[i+2],a=data[i+3]; if(a<128)continue; total++;
+    const mx=Math.max(r,g,b),mn=Math.min(r,g,b),v=mx/255,s=mx?(mx-mn)/mx:0;
+    let hh=0; if(mx===mn)hh=0; else if(mx===r)hh=60*(((g-b)/(mx-mn))%6); else if(mx===g)hh=60*(((b-r)/(mx-mn))+2); else hh=60*(((r-g)/(mx-mn))+4); if(hh<0)hh+=360;
+    if(v<0.18){dark++;}
+    else if(s<0.18){other++;} // γκρι/λευκό (φόντο)
+    else if(hh>=70&&hh<=170){green++;}
+    else if(hh>=40&&hh<70){yellow++;}
+    else if((hh>=15&&hh<40)&&v<0.6){brown++;}
+    else other++;
+  }
+  const plant=green+yellow+brown+dark||1;
+  const pg=Math.round(green/plant*100),py=Math.round(yellow/plant*100),pb=Math.round(brown/plant*100),pd=Math.round(dark/plant*100);
+  const cropKey=$('visCrop').value.replace('type:','').replace(/^.*:/,''); const meta=CROPS[cropKey]||CROPS.olive;
+  const findings=[];
+  if(pg>=75) findings.push({cls:'ok',t:'Υγιές φύλλωμα',d:'Κυριαρχεί το πράσινο ('+pg+'%). Καλή θρεπτική κατάσταση.'});
+  if(py>=20) findings.push({cls:'warn',t:'Χλώρωση / κιτρίνισμα ('+py+'%)',d:'Πιθανή τροφοπενία (άζωτο/σίδηρος/μαγνήσιο), υδατικό στρες ή αρχή ασθένειας. Έλεγξε νεύρα φύλλων & λίπανση.'});
+  if(pb>=12) findings.push({cls:'bad',t:'Νεκρώσεις / κηλίδες ('+pb+'%)',d:'Καστανές περιοχές: πιθανές μυκητολογικές κηλίδες'+(cropKey==='olive'?' (κυκλοκόνιο/κερκόσπορα)':cropKey==='vine'?' (περονόσπορα/ωίδιο)':'')+', ηλιακό έγκαυμα ή προσβολή. Απομόνωσε δείγμα.'});
+  if(pd>=15) findings.push({cls:'warn',t:'Σκούρες περιοχές ('+pd+'%)',d:'Πιθανή καπνιά (μελίτωμα από έντομα) ή σκίαση/σκιά λήψης.'});
+  if(!findings.length) findings.push({cls:'info',t:'Ανεπαρκές δείγμα φυλλώματος',d:'Δεν εντοπίστηκε αρκετό φύλλωμα. Τράβα κοντινή φωτογραφία φύλλου με καλό φωτισμό.'});
+  $('visResult').innerHTML=`
+    <div class="small">Καλλιέργεια αναφοράς: <b>${meta.name}</b></div>
+    <div style="margin:10px 0">
+      <div class="bar"><div style="width:${pg}%;background:var(--leaf)"></div><div style="width:${py}%;background:#e2c044"></div><div style="width:${pb}%;background:#8a5a2b"></div><div style="width:${pd}%;background:#333"></div></div>
+      <div class="small" style="margin-top:4px">🟩 Υγιές ${pg}% · 🟨 Κίτρινο ${py}% · 🟫 Καστανό ${pb}% · ⬛ Σκούρο ${pd}%</div>
+    </div>
+    ${findings.map(f=>`<div class="note ${f.cls}"><b>${esc(f.t)}</b><br>${esc(f.d)}</div>`).join('')}
+    <div class="small" style="margin-top:8px">⚠️ Ενδεικτική τοπική ανάλυση χρωματικής κατανομής — δεν αποτελεί οριστική διάγνωση. Για ασφαλή ταυτοποίηση απευθύνσου σε γεωπόνο ή εργαστήριο φυτοπαθολογίας.</div>`;
+}
+
+/* ================= DATA I/O ================= */
+$('expJson').onclick=()=>{
+  const blob=new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='agrotexnitis_'+todayISO()+'.json';a.click();
+};
+$('impJson').onclick=()=>$('impFile').click();
+$('impFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.parcels)throw 0;if(confirm('Αντικατάσταση όλων των δεδομένων με το αρχείο;')){DB=Object.assign({parcels:[],crops:[],logs:[],weather:{},settings:{}},d);save();initAll();alert('Έγινε εισαγωγή.');}}catch(x){alert('Μη έγκυρο αρχείο.');}};r.readAsText(f);};
+$('expCsv').onclick=()=>{
+  const rows=[['Ημερομηνία','Στόχος','Κατηγορία','Σκεύασμα','Δόση','Κόστος(€)','Απόδοση(kg)','Σημειώσεις']];
+  DB.logs.slice().sort((a,b)=>a.date<b.date?-1:1).forEach(l=>rows.push([l.date,targetLabel(l.target),l.cat,l.product||'',l.dose||'',l.cost||'',l.yield||'',(l.notes||'').replace(/\n/g,' ')]));
+  const csv='﻿'+rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(';')).join('\r\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='imerologio_'+todayISO()+'.csv';a.click();
+};
+$('printReport').onclick=()=>{renderDash();window.print();};
+$('clearAll').onclick=()=>{if(confirm('Διαγραφή ΟΛΩΝ των δεδομένων; Δεν αναιρείται.')){if(confirm('Σίγουρα; Κράτησε πρώτα αντίγραφο (JSON).')){localStorage.removeItem(LS_KEY);DB={parcels:[],crops:[],logs:[],weather:{},settings:{}};initAll();}}};
+
+/* ================= PWA (εγκατάσταση + offline) ================= */
+let deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;$('installBtn').style.display='inline-block';});
+$('installBtn').onclick=async()=>{ if(!deferredPrompt){alert('Για εγκατάσταση στο κινητό: άνοιξε τη σελίδα σε Chrome/Safari και επίλεξε «Προσθήκη στην αρχική οθόνη».');return;} deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt=null; $('installBtn').style.display='none'; };
+window.addEventListener('appinstalled',()=>{$('installBtn').style.display='none';});
+if('serviceWorker' in navigator && location.protocol.startsWith('http')){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
+
+/* ================= INIT ================= */
+function initAll(){ renderParcels(); refreshTargets(); renderLogs(); renderDash(); fillCropTypeSelect(); }
+$('verLine').textContent='Αγροτεχνίτης ΤΝ v1.1 · offline-first PWA · χάρτης · αυτόματο πρόγραμμα · '+Object.keys(CROPS).length+' είδη καλλιεργειών';
+load(); updNet(); initAll();
+</script>
+</body>
+</html>
