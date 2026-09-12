@@ -2,8 +2,9 @@
 const CACHE = 'agrotexnitis-v1';
 const ASSETS = [
   './', './index.html', './manifest.json', './icon-192.png', './icon-512.png',
-  'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css',
-  'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js'
+  './leaflet.min.css', './leaflet.min.js',
+  './images/marker-icon.png', './images/marker-icon-2x.png', './images/marker-shadow.png',
+  './images/layers.png', './images/layers-2x.png'
 ];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS).catch(()=>{})).then(() => self.skipWaiting()));

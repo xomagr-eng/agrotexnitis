@@ -11,8 +11,8 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="icon" href="icon-192.png">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<link rel="stylesheet" href="leaflet.min.css">
+<script src="leaflet.min.js"></script>
 <style>
   :root{
     --bg:#eef3ec; --panel:#ffffff; --ink:#1a2620; --muted:#5d6b60; --line:#d3ddd0;
@@ -1184,7 +1184,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){ naviga
 
 /* ================= INIT ================= */
 function initAll(){ renderParcels(); refreshTargets(); renderLogs(); renderDash(); fillCropTypeSelect(); }
-$('verLine').textContent='Αγροτεχνίτης ΤΝ v1.1 · offline-first PWA · χάρτης · αυτόματο πρόγραμμα · '+Object.keys(CROPS).length+' είδη καλλιεργειών';
+$('verLine').textContent='Αγροτεχνίτης ΤΝ v1.2 · offline-first PWA (τοπική Leaflet) · χάρτης · αυτόματο πρόγραμμα · '+Object.keys(CROPS).length+' είδη καλλιεργειών';
 load(); updNet(); initAll();
 </script>
 </body>
