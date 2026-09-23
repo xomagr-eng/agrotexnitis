@@ -2,7 +2,7 @@
 const CACHE = 'agrotexnitis-v1';
 const ASSETS = [
   './', './index.html', './manifest.json', './icon-192.png', './icon-512.png',
-  './leaflet.min.css', './leaflet.min.js',
+  './plants.js', './leaflet.min.css', './leaflet.min.js',
   './images/marker-icon.png', './images/marker-icon-2x.png', './images/marker-shadow.png',
   './images/layers.png', './images/layers-2x.png'
 ];

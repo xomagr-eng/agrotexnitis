@@ -13,6 +13,7 @@
 <link rel="icon" href="icon-192.png">
 <link rel="stylesheet" href="leaflet.min.css">
 <script src="leaflet.min.js"></script>
+<script src="plants.js"></script>
 <style>
   :root{
     --bg:#eef3ec; --panel:#ffffff; --ink:#1a2620; --muted:#5d6b60; --line:#d3ddd0;
@@ -117,6 +118,36 @@
     .card{padding:11px} #map{height:240px}
     .kpi{grid-template-columns:1fr 1fr} .tabs button{font-size:13px;padding:7px 10px}
   }
+  /* Εγκυκλοπαίδεια Φυτών */
+  .enc-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+  .enc-cats{display:flex;gap:6px;flex-wrap:wrap}
+  .enc-cats button{background:var(--bg);border:1px solid var(--line);color:var(--ink);font-size:12.5px;font-weight:600;padding:6px 11px;border-radius:20px;cursor:pointer}
+  .enc-cats button.active{background:var(--accent);color:#fff;border-color:transparent}
+  .enc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px}
+  .pcard{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;cursor:pointer;transition:transform .12s,box-shadow .12s;display:flex;flex-direction:column;gap:4px}
+  .pcard:hover{transform:translateY(-2px);box-shadow:var(--shadow);border-color:var(--accent)}
+  .pcard .pe{font-size:34px;line-height:1}
+  .pcard .pn{font-weight:700;font-size:14.5px}
+  .pcard .psci{font-size:10.5px;font-style:italic;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pcard .ptags{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
+  .ptag{font-size:10px;padding:2px 6px;border-radius:5px;background:var(--bg);border:1px solid var(--line);color:var(--muted);font-weight:600}
+  .ptag.dif0{color:var(--ok)} .ptag.dif1{color:var(--warn)} .ptag.dif2{color:var(--bad)}
+  .pmodal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:50;padding:14px}
+  .pmodal .box{background:var(--panel);border:1px solid var(--line);border-radius:16px;max-width:660px;width:100%;max-height:90vh;overflow:auto;box-shadow:var(--shadow)}
+  .pmodal .phead{display:flex;gap:12px;align-items:center;padding:16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel);z-index:2}
+  .pmodal .phead .pe{font-size:44px}
+  .pmodal .phead h2{margin:0;font-size:20px;text-transform:none;letter-spacing:0;color:var(--ink);display:block}
+  .pmodal .phead .psci{font-size:12px;font-style:italic;color:var(--muted)}
+  .pmodal .pclose{margin-left:auto;background:var(--bg);border:1px solid var(--line);border-radius:8px;width:34px;height:34px;font-size:18px;cursor:pointer;color:var(--ink);flex:0 0 auto}
+  .pbody{padding:14px 16px}
+  .pfield{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+  .pfield:last-child{border-bottom:none}
+  .pfield .pi{font-size:19px;flex:0 0 26px;text-align:center}
+  .pfield .pc{flex:1}
+  .pfield .pl{font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);font-weight:700;margin-bottom:2px}
+  .pfield .pv{font-size:13.5px;line-height:1.45}
+  .ptip{background:var(--bg);border-left:3px solid var(--accent);border-radius:6px;padding:9px 11px;margin-top:10px;font-size:13px}
+  .ptox{background:rgba(197,48,48,.1);border-left:3px solid var(--bad);border-radius:6px;padding:8px 11px;margin-top:8px;font-size:12.5px;color:var(--bad);font-weight:600}
   @media print{header,.tabs,.no-print,.btnrow,.maptools,#map{display:none!important}.grid,.grid3{grid-template-columns:1fr}.card{break-inside:avoid;box-shadow:none}}
 </style>
 </head>
@@ -133,6 +164,7 @@
   <button data-tab="dash" class="active">🧭 Σύμβουλος ΤΝ</button>
   <button data-tab="parcels">🗺️ Αγροτεμάχια &amp; Δέντρα</button>
   <button data-tab="agenda">📒 Ημερολόγιο εργασιών</button>
+  <button data-tab="encyclopedia">🌱 Εγκυκλοπαίδεια</button>
   <button data-tab="program">🗓️ Πρόγραμμα ΤΝ</button>
   <button data-tab="pheno">🌸 Φαινολογία &amp; Απόδοση</button>
   <button data-tab="protect">🛡️ Φυτοπροστασία &amp; Άρδευση</button>
@@ -294,6 +326,18 @@
     </div>
   </div>
 </div>
+</div>
+
+<!-- ============================ ENCYCLOPEDIA ============================ -->
+<div class="tabpane" id="tab-encyclopedia">
+  <div class="card">
+    <h2>🌱 Εγκυκλοπαίδεια Φυτών <span class="r"><span class="small" id="encCount"></span></span></h2>
+    <div class="hint">Πλήρης οδηγός φροντίδας: δέντρα, λαχανικά, αρωματικά, λουλούδια, εσωτερικά φυτά, παχύφυτα, θάμνοι & αναρριχώμενα. Πάτησε ένα φυτό για πότισμα, λίπανση, φύτεμα, κλάδεμα, εχθρούς & tips.</div>
+    <input id="encSearch" placeholder="🔎 Αναζήτηση φυτού (όνομα ή επιστημονικό)…" style="margin-bottom:10px">
+    <div class="enc-cats" id="encCats"></div>
+  </div>
+  <div class="enc-grid" id="encGrid"></div>
+  <div id="encEmpty" class="empty" style="display:none">Δεν βρέθηκε φυτό. Δοκίμασε άλλον όρο ή κατηγορία.</div>
 </div>
 
 <!-- ============================ AUTO PROGRAM ============================ -->
@@ -519,6 +563,7 @@ document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{
   b.classList.add('active'); $('tab-'+b.dataset.tab).classList.add('active');
   if(b.dataset.tab==='dash') renderDash();
   if(b.dataset.tab==='parcels') setTimeout(initMap,60);
+  if(b.dataset.tab==='encyclopedia') renderEncyclopedia();
   if(b.dataset.tab==='program'){fillCropSelect('progCrop'); renderProgram();}
   if(b.dataset.tab==='pheno') {fillCropSelect('phCrop'); renderPheno();}
   if(b.dataset.tab==='protect'){fillCropSelect('prCrop'); renderProtect();}
@@ -1176,6 +1221,60 @@ $('expCsv').onclick=()=>{
 $('printReport').onclick=()=>{renderDash();window.print();};
 $('clearAll').onclick=()=>{if(confirm('Διαγραφή ΟΛΩΝ των δεδομένων; Δεν αναιρείται.')){if(confirm('Σίγουρα; Κράτησε πρώτα αντίγραφο (JSON).')){localStorage.removeItem(LS_KEY);DB={parcels:[],crops:[],logs:[],weather:{},settings:{}};initAll();}}};
 
+/* ================= ΕΓΚΥΚΛΟΠΑΙΔΕΙΑ ΦΥΤΩΝ ================= */
+let encCat='all', encQ='';
+function renderEncCats(){
+  const el=$('encCats'); if(!el||!window.PLANT_CATS)return;
+  let html='<button data-c="all" class="'+(encCat==='all'?'active':'')+'">🌿 Όλα</button>';
+  Object.entries(PLANT_CATS).forEach(([k,v])=>{ html+='<button data-c="'+k+'" class="'+(encCat===k?'active':'')+'">'+v.e+' '+esc(v.name)+'</button>'; });
+  el.innerHTML=html;
+  el.querySelectorAll('button').forEach(b=>b.onclick=()=>{encCat=b.dataset.c;renderEncyclopedia();});
+}
+function shortSun(s){ if(!s)return '—'; if(/Πλήρης ήλιος/.test(s))return 'Ήλιος'; if(/ημισκι|Ημισκι/.test(s))return 'Ημισκιά'; if(/Έμμεσο|Χαμηλό|Φωτεινό|σκιά|Σκι/.test(s))return 'Σκιά/έμμ.'; return s.split(/[ ,·/]/)[0]; }
+function renderEncyclopedia(){
+  if(!window.PLANTS){ $('encGrid').innerHTML='<div class="empty">Φόρτωση βάσης φυτών…</div>'; return; }
+  renderEncCats();
+  const q=encQ.trim().toLowerCase();
+  const list=PLANTS.filter(p=> (encCat==='all'||p.c===encCat) && (!q || p.n.toLowerCase().includes(q) || (p.sci||'').toLowerCase().includes(q)));
+  $('encCount').textContent=list.length+' / '+PLANTS.length+' φυτά';
+  $('encEmpty').style.display=list.length?'none':'';
+  $('encGrid').innerHTML=list.map(p=>{
+    const idx=PLANTS.indexOf(p), dif=p.dif==='Εύκολο'?0:p.dif==='Μέτριο'?1:2;
+    return `<div class="pcard" data-i="${idx}"><div class="pe">${p.e}</div>
+      <div class="pn">${esc(p.n)}</div><div class="psci">${esc(p.sci||'')}</div>
+      <div class="ptags"><span class="ptag">☀️ ${esc(shortSun(p.sun))}</span><span class="ptag dif${dif}">${esc(p.dif||'')}</span></div></div>`;
+  }).join('');
+  $('encGrid').querySelectorAll('.pcard').forEach(c=>c.onclick=()=>openPlant(+c.dataset.i));
+}
+function openPlant(i){
+  const p=PLANTS[i]; if(!p)return; const cat=PLANT_CATS[p.c]||{e:'🌱',name:''};
+  const F=(icon,lbl,val)=> val?`<div class="pfield"><div class="pi">${icon}</div><div class="pc"><div class="pl">${lbl}</div><div class="pv">${esc(val)}</div></div></div>`:'';
+  const html=`<div class="box">
+    <div class="phead"><div class="pe">${p.e}</div>
+      <div><h2>${esc(p.n)}</h2><div class="psci">${esc(p.sci||'')} · ${cat.e} ${esc(cat.name)}</div></div>
+      <button class="pclose" aria-label="Κλείσιμο">✕</button></div>
+    <div class="pbody">
+      ${F('☀️','Έκθεση / Ήλιος',p.sun)}
+      ${F('💧','Πότισμα',p.wat)}
+      ${F('🪴','Έδαφος',p.soil)}
+      ${F('🧪','Λίπανση',p.fert)}
+      ${F('🌱','Φύτεμα / Πολλαπλασιασμός',p.plant)}
+      ${F('✂️','Κλάδεμα',p.prune)}
+      ${F('🌡️','Θερμοκρασία / Αντοχή',p.temp)}
+      ${F('🧺','Συγκομιδή',p.harv)}
+      ${F('🐛','Εχθροί & Ασθένειες',p.pest)}
+      ${F('🤝','Συντροφιά φύτευσης',p.comp)}
+      ${p.tip?`<div class="ptip">💡 <b>Συμβουλή:</b> ${esc(p.tip)}</div>`:''}
+      ${p.tox?`<div class="ptox">⚠️ ${esc(p.tox)}</div>`:''}
+    </div></div>`;
+  const modal=document.createElement('div'); modal.className='pmodal'; modal.innerHTML=html;
+  modal.onclick=e=>{ if(e.target===modal||e.target.closest('.pclose')) modal.remove(); };
+  function onEsc(ev){ if(ev.key==='Escape'){modal.remove();document.removeEventListener('keydown',onEsc);} }
+  document.addEventListener('keydown',onEsc);
+  document.body.appendChild(modal);
+}
+document.getElementById('encSearch').oninput=e=>{ encQ=e.target.value; renderEncyclopedia(); };
+
 /* ================= PWA (εγκατάσταση + offline) ================= */
 let deferredPrompt=null;
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;$('installBtn').style.display='inline-block';});
@@ -1185,7 +1284,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){ naviga
 
 /* ================= INIT ================= */
 function initAll(){ renderParcels(); refreshTargets(); renderLogs(); renderDash(); fillCropTypeSelect(); }
-$('verLine').textContent='Αγροτεχνίτης ΤΝ v1.2 · © by Chronis Makris · offline-first PWA (τοπική Leaflet) · '+Object.keys(CROPS).length+' είδη καλλιεργειών';
+$('verLine').textContent='Αγροτεχνίτης ΤΝ v1.3 · © by Chronis Makris · offline PWA · '+Object.keys(CROPS).length+' καλλιέργειες + '+(window.PLANTS?PLANTS.length:0)+' φυτά στην εγκυκλοπαίδεια';
 load(); updNet(); initAll();
 </script>
 </body>
