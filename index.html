@@ -182,6 +182,11 @@
   .gs-s{fill:#cfe0c4;stroke:#6b7d2f;stroke-width:1.2} .gs-b{fill:#3a7d34}
   .gs-c{stroke:#2b6cb0;stroke-width:2;fill:none;stroke-dasharray:3 2} .gs-tie{stroke:#b7791f;stroke-width:2;fill:none}
   .gs-t{fill:var(--muted);font-size:9px;font-family:inherit} .gs-ar{fill:var(--accent);font-size:18px;font-weight:700}
+  .gdiagwrap{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start;justify-content:center}
+  .gdiagwrap .gdiag{flex:1 1 300px;margin:0}
+  .gphoto{flex:1 1 260px;min-width:0}
+  .gphoto-img{width:100%;height:auto;max-height:210px;object-fit:cover;border-radius:8px;border:1px solid var(--line);display:block}
+  .gcredit{font-size:10px;color:var(--muted);text-align:center;padding:3px}
   .ptag.ed-safe{color:var(--ok);border-color:var(--ok)} .ptag.ed-caution{color:var(--warn);border-color:var(--warn)}
   .ptag.ed-toxic{color:var(--bad);border-color:var(--bad)} .ptag.ed-deadly{color:#fff;background:var(--bad);border-color:var(--bad)}
   #encBanner .mwarn{background:rgba(197,48,48,.12);border:1px solid var(--bad);border-left:4px solid var(--bad);border-radius:10px;padding:11px 13px;margin-bottom:10px;font-size:13px;line-height:1.5;color:var(--ink)}
@@ -387,6 +392,8 @@
   <div class="card">
     <h2>🔪 Εμβολιασμός Καρποφόρων <span class="r"><span class="small">Πηγή: Υπ. Γεωργίας Κύπρου (2009)</span></span></h2>
     <div id="graftIntro" class="hint"></div>
+    <label class="inline" style="margin-top:10px;cursor:pointer;font-weight:600;color:var(--ink)"><input type="checkbox" id="graftPhotos" style="width:auto;flex:0"> <span>📷 Φωτογραφίες μεθόδων (Wikimedia Commons)</span></label>
+    <div class="hint" style="margin:2px 0 0">Opt-in: φορτώνουν <b>online</b> μόνο όταν το ενεργοποιήσεις. Τα σκίτσα δουλεύουν πάντα offline.</div>
   </div>
   <div id="graftBody"></div>
 </div>
@@ -1274,6 +1281,29 @@ $('printReport').onclick=()=>{renderDash();window.print();};
 $('clearAll').onclick=()=>{if(confirm('Διαγραφή ΟΛΩΝ των δεδομένων; Δεν αναιρείται.')){if(confirm('Σίγουρα; Κράτησε πρώτα αντίγραφο (JSON).')){localStorage.removeItem(LS_KEY);DB={parcels:[],crops:[],logs:[],weather:{},settings:{}};initAll();}}};
 
 /* ================= ΕΜΒΟΛΙΑΣΜΟΣ ================= */
+let GPHOTOS=false, graftPhotoCache={};
+try{ GPHOTOS=localStorage.getItem('agro_graftphotos')==='1'; graftPhotoCache=JSON.parse(localStorage.getItem('agro_graftphotocache')||'{}'); }catch(e){}
+async function fetchGraftPhoto(q){
+  if(q in graftPhotoCache) return graftPhotoCache[q];
+  try{
+    const u='https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrnamespace=6&gsrlimit=6&gsrsearch='+encodeURIComponent(q)+'&prop=imageinfo&iiprop=url|mime&iiurlwidth=420';
+    const d=await (await fetch(u)).json();
+    const pages=d.query&&d.query.pages?Object.values(d.query.pages):[]; let url=null;
+    for(const p of pages){ const ii=p.imageinfo&&p.imageinfo[0]; if(ii&&/jpeg|png/.test(ii.mime)&&ii.thumburl){url=ii.thumburl;break;} }
+    graftPhotoCache[q]=url; try{localStorage.setItem('agro_graftphotocache',JSON.stringify(graftPhotoCache));}catch(e){} return url;
+  }catch(e){ return null; }
+}
+function loadGraftPhotos(){
+  if(!GPHOTOS) return;
+  document.querySelectorAll('#graftBody .gphoto').forEach(async el=>{
+    if(el.dataset.done) return; el.dataset.done='1';
+    const url=await fetchGraftPhoto(el.dataset.q);
+    if(url){ const img=document.createElement('img'); img.className='gphoto-img'; img.src=url; img.alt='Φωτογραφία μεθόδου εμβολιασμού';
+      img.onerror=()=>el.remove(); el.appendChild(img);
+      const c=document.createElement('div'); c.className='gcredit'; c.textContent='📷 Wikimedia Commons'; el.appendChild(c);
+    } else el.remove();
+  });
+}
 function renderGraft(){
   if(!window.GRAFT){ $('graftBody').innerHTML='<div class="empty">Φόρτωση δεδομένων εμβολιασμού…</div>'; return; }
   const G=GRAFT; $('graftIntro').textContent=G.intro;
@@ -1286,7 +1316,9 @@ function renderGraft(){
     h+='<div class="g-grp">'+esc(grp.group)+'</div>';
     grp.items.forEach(m=>{
       const svg=(window.GRAFT_SVG&&GRAFT_SVG[m.n])||'';
-      h+='<details class="gmeth"><summary><span>'+(m.olive?'🫒 ':'')+esc(m.n)+(m.olive?' <span class="gbadge">ΕΛΙΑ</span>':'')+'</span><span class="gar">▶</span></summary><div class="gin">'+svg+
+      const q=(window.GRAFT_PHOTO_Q&&GRAFT_PHOTO_Q[m.n])||'grafting';
+      const wrap='<div class="gdiagwrap">'+svg+(GPHOTOS?'<div class="gphoto" data-q="'+esc(q)+'"></div>':'')+'</div>';
+      h+='<details class="gmeth"><summary><span>'+(m.olive?'🫒 ':'')+esc(m.n)+(m.olive?' <span class="gbadge">ΕΛΙΑ</span>':'')+'</span><span class="gar">▶</span></summary><div class="gin">'+wrap+
          '<div class="guse">'+esc(m.use)+'</div><ol class="gsteps">'+m.steps.map(s=>'<li>'+esc(s)+'</li>').join('')+'</ol>'+
          (m.tip?'<div class="ptip">💡 '+esc(m.tip)+'</div>':'')+'</div></details>';
     });
@@ -1301,6 +1333,8 @@ function renderGraft(){
   h+='<div class="card"><h2>🧰 Εργαλεία & υλικά</h2>'+G.tools.map(t=>'<div class="pfield"><div class="pi">🔧</div><div class="pc"><div class="pl">'+esc(t.n)+'</div><div class="pv">'+esc(t.d)+'</div></div></div>').join('')+'</div>';
   h+='<div class="card"><h2>🌿 Επιλογή & διατήρηση εμβολίων</h2><div class="pfield"><div class="pi">✔️</div><div class="pc"><div class="pl">Επιλογή</div><div class="pv">'+esc(G.scions.select)+'</div></div></div><div class="pfield"><div class="pi">❄️</div><div class="pc"><div class="pl">Διατήρηση</div><div class="pv">'+esc(G.scions.store)+'</div></div></div></div>';
   $('graftBody').innerHTML=h;
+  const gp=$('graftPhotos'); if(gp){ gp.checked=GPHOTOS; gp.onchange=()=>{ GPHOTOS=gp.checked; try{localStorage.setItem('agro_graftphotos',GPHOTOS?'1':'0');}catch(e){} renderGraft(); }; }
+  loadGraftPhotos();
 }
 
 /* ================= ΕΓΚΥΚΛΟΠΑΙΔΕΙΑ ΦΥΤΩΝ ================= */

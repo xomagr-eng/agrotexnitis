@@ -192,3 +192,14 @@ window.GRAFT_SVG = {
   "Υπόφλοιος / Στεφανίτης": '<svg viewBox="0 0 300 150" class="gdiag" xmlns="http://www.w3.org/2000/svg"><rect class="gs-w" x="60" y="54" width="52" height="92" rx="4"/><line class="gs-tie" x1="60" y1="54" x2="112" y2="54"/><path class="gs-c" d="M104 54 V98"/><path class="gs-s" d="M97 20 h14 v34 l-7 6 l-7 -6 Z"/><circle class="gs-b" cx="104" cy="34" r="4"/><path class="gs-tie" d="M58 62 H114 M58 72 H114"/><text class="gs-t" x="86" y="140" text-anchor="middle">Πλάγια: σφήνα φλοιός/ξύλο</text><ellipse class="gs-w" cx="220" cy="86" rx="42" ry="20"/><rect class="gs-s" x="214" y="58" width="12" height="16" rx="2"/><circle class="gs-b" cx="220" cy="66" r="3"/><rect class="gs-s" x="182" y="82" width="14" height="9" rx="2"/><rect class="gs-s" x="244" y="82" width="14" height="9" rx="2"/><text class="gs-t" x="220" y="140" text-anchor="middle">Κάτοψη: πολλά κεντράδια</text></svg>',
   "Σκελετοεμβολιασμός": '<svg viewBox="0 0 300 150" class="gdiag" xmlns="http://www.w3.org/2000/svg"><path class="gs-br" d="M151 84 L104 56 M151 88 L198 60"/><rect class="gs-w" x="140" y="70" width="22" height="76" rx="3"/><rect class="gs-s" x="98" y="30" width="9" height="24" rx="2"/><circle class="gs-b" cx="102" cy="40" r="3"/><rect class="gs-s" x="194" y="34" width="9" height="24" rx="2"/><circle class="gs-b" cx="198" cy="44" r="3"/><path class="gs-tie" d="M96 54 h12 M192 58 h12"/><text class="gs-t" x="150" y="140" text-anchor="middle">Καρατόμηση βραχιόνων + επανεμβολιασμός</text></svg>'
 };
+
+/* Ερωτήματα Wikimedia Commons για opt-in φωτογραφίες ανά μέθοδο */
+window.GRAFT_PHOTO_Q = {
+  "Ασπιδωτός «Τ»": "T-budding",
+  "Πλακίτης": "grafting olive",
+  "Επικαθήμενο ασπίδιο (Chip budding)": "chip budding",
+  "Αγγλικός / Επιτραπέζιος": "whip tongue grafting",
+  "Εγκεντρισμός με απλή σχισμή": "cleft grafting",
+  "Υπόφλοιος / Στεφανίτης": "bark grafting",
+  "Σκελετοεμβολιασμός": "grafting fruit tree"
+};
