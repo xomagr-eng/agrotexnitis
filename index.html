@@ -1375,10 +1375,17 @@ async function fetchPlantPhoto(p){
 }
 let photoObserver=null;
 function lazyPhotos(){
-  if(!PHOTOS||!('IntersectionObserver'in window)) return;
-  if(photoObserver) photoObserver.disconnect();
-  photoObserver=new IntersectionObserver((ents,obs)=>{ ents.forEach(en=>{ if(en.isIntersecting){ obs.unobserve(en.target); loadCardPhoto(en.target); } }); },{rootMargin:'250px'});
-  document.querySelectorAll('#encGrid .pcard').forEach(c=>photoObserver.observe(c));
+  if(!PHOTOS) return;
+  const cards=[...document.querySelectorAll('#encGrid .pcard')]; if(!cards.length) return;
+  const vh=window.innerHeight||800;
+  // Εγγυημένη φόρτωση: πρώτες κάρτες + όσες είναι κοντά στην οθόνη (ανεξαρτήτως θέσης scroll)
+  cards.forEach((c,i)=>{ const r=c.getBoundingClientRect(); if(i<15 || (r.top<vh+400 && r.bottom>-200)) loadCardPhoto(c); });
+  // Οι υπόλοιπες φορτώνουν με το scroll (throttled)
+  if('IntersectionObserver'in window){
+    if(photoObserver) photoObserver.disconnect();
+    photoObserver=new IntersectionObserver((ents,obs)=>{ ents.forEach(en=>{ if(en.isIntersecting){ obs.unobserve(en.target); loadCardPhoto(en.target); } }); },{rootMargin:'300px'});
+    cards.forEach(c=>photoObserver.observe(c));
+  } else { cards.forEach(c=>loadCardPhoto(c)); }
 }
 async function loadCardPhoto(card){
   const p=PLANTS[+card.dataset.i]; if(!p) return;
