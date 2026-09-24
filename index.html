@@ -177,6 +177,11 @@
   .g-cal tr.olive td{background:rgba(107,125,47,.1)}
   .g-cal .cr{font-weight:700;white-space:nowrap} .g-cal .pr{white-space:nowrap;color:var(--accent);font-weight:600;font-size:12px}
   .g-grp{font-weight:700;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin:14px 0 8px}
+  .gdiag{width:100%;max-width:340px;height:auto;display:block;margin:4px auto 8px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:4px}
+  .gs-w{fill:#d8c091;stroke:#9c7b45;stroke-width:1.5} .gs-br{stroke:#c9a86a;stroke-width:11;stroke-linecap:round;fill:none}
+  .gs-s{fill:#cfe0c4;stroke:#6b7d2f;stroke-width:1.2} .gs-b{fill:#3a7d34}
+  .gs-c{stroke:#2b6cb0;stroke-width:2;fill:none;stroke-dasharray:3 2} .gs-tie{stroke:#b7791f;stroke-width:2;fill:none}
+  .gs-t{fill:var(--muted);font-size:9px;font-family:inherit} .gs-ar{fill:var(--accent);font-size:18px;font-weight:700}
   .ptag.ed-safe{color:var(--ok);border-color:var(--ok)} .ptag.ed-caution{color:var(--warn);border-color:var(--warn)}
   .ptag.ed-toxic{color:var(--bad);border-color:var(--bad)} .ptag.ed-deadly{color:#fff;background:var(--bad);border-color:var(--bad)}
   #encBanner .mwarn{background:rgba(197,48,48,.12);border:1px solid var(--bad);border-left:4px solid var(--bad);border-radius:10px;padding:11px 13px;margin-bottom:10px;font-size:13px;line-height:1.5;color:var(--ink)}
@@ -1280,7 +1285,8 @@ function renderGraft(){
   G.methods.forEach(grp=>{
     h+='<div class="g-grp">'+esc(grp.group)+'</div>';
     grp.items.forEach(m=>{
-      h+='<details class="gmeth"><summary><span>'+(m.olive?'🫒 ':'')+esc(m.n)+(m.olive?' <span class="gbadge">ΕΛΙΑ</span>':'')+'</span><span class="gar">▶</span></summary><div class="gin">'+
+      const svg=(window.GRAFT_SVG&&GRAFT_SVG[m.n])||'';
+      h+='<details class="gmeth"><summary><span>'+(m.olive?'🫒 ':'')+esc(m.n)+(m.olive?' <span class="gbadge">ΕΛΙΑ</span>':'')+'</span><span class="gar">▶</span></summary><div class="gin">'+svg+
          '<div class="guse">'+esc(m.use)+'</div><ol class="gsteps">'+m.steps.map(s=>'<li>'+esc(s)+'</li>').join('')+'</ol>'+
          (m.tip?'<div class="ptip">💡 '+esc(m.tip)+'</div>':'')+'</div></details>';
     });
