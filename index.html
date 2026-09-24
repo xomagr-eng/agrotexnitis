@@ -1280,11 +1280,16 @@ $('expCsv').onclick=()=>{
 $('printReport').onclick=()=>{renderDash();window.print();};
 $('clearAll').onclick=()=>{if(confirm('Διαγραφή ΟΛΩΝ των δεδομένων; Δεν αναιρείται.')){if(confirm('Σίγουρα; Κράτησε πρώτα αντίγραφο (JSON).')){localStorage.removeItem(LS_KEY);DB={parcels:[],crops:[],logs:[],weather:{},settings:{}};initAll();}}};
 
+/* Κοινό «throttle» για αιτήματα φωτογραφιών (Wikipedia/Commons) — αποφυγή burst/rate-limit */
+let _photoGate=Promise.resolve();
+function photoGate(ms){ const p=_photoGate.then(()=>new Promise(r=>setTimeout(r,ms||130))); _photoGate=p; return p; }
+
 /* ================= ΕΜΒΟΛΙΑΣΜΟΣ ================= */
 let GPHOTOS=false, graftPhotoCache={};
 try{ GPHOTOS=localStorage.getItem('agro_graftphotos')==='1'; graftPhotoCache=JSON.parse(localStorage.getItem('agro_graftphotocache')||'{}'); }catch(e){}
 async function fetchGraftPhoto(q){
   if(q in graftPhotoCache) return graftPhotoCache[q];
+  await photoGate();
   try{
     const u='https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrnamespace=6&gsrlimit=6&gsrsearch='+encodeURIComponent(q)+'&prop=imageinfo&iiprop=url|mime&iiurlwidth=420';
     const d=await (await fetch(u)).json();
@@ -1347,13 +1352,26 @@ function sciKey(p){ let s=(p.sci||p.n||'').replace(/\(.*?\)/g,' ').replace(/\b(s
 async function fetchPlantPhoto(p){
   const key=sciKey(p); if(!key) return null;
   if(key in photoCache) return photoCache[key];
+  await photoGate();
+  let url=null, errored=false;
+  // 1) Κύρια εικόνα άρθρου Wikipedia (επιστημονικό όνομα)
   try{
     const u='https://en.wikipedia.org/w/api.php?action=query&format=json&origin=*&redirects=1&prop=pageimages&piprop=thumbnail&pithumbsize=360&titles='+encodeURIComponent(key);
     const d=await (await fetch(u)).json();
-    const pages=(d.query&&d.query.pages)||{}; let url=null;
+    const pages=(d.query&&d.query.pages)||{};
     for(const k in pages){ if(pages[k].thumbnail&&pages[k].thumbnail.source){ url=pages[k].thumbnail.source; break; } }
-    photoCache[key]=url; savePhotoCache(); return url;
-  }catch(e){ return null; }
+  }catch(e){ errored=true; }
+  // 2) Fallback: αναζήτηση Wikimedia Commons (καλύτερη κάλυψη για μανιτάρια & άγρια χόρτα)
+  if(!url){
+    try{
+      const cu='https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrnamespace=6&gsrlimit=6&gsrsearch='+encodeURIComponent(key)+'&prop=imageinfo&iiprop=url|mime&iiurlwidth=360';
+      const cd=await (await fetch(cu)).json();
+      const cp=cd.query&&cd.query.pages?Object.values(cd.query.pages):[];
+      for(const pg of cp){ const ii=pg.imageinfo&&pg.imageinfo[0]; if(ii&&/jpeg|png/.test(ii.mime)&&ii.thumburl){ url=ii.thumburl; break; } }
+    }catch(e){ errored=true; }
+  }
+  if(url || !errored){ photoCache[key]=url; savePhotoCache(); } // cache μόνο όταν οι APIs απάντησαν (όχι σε σφάλμα δικτύου)
+  return url;
 }
 let photoObserver=null;
 function lazyPhotos(){
