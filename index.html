@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="leaflet.min.css">
 <script src="leaflet.min.js"></script>
 <script src="plants.js"></script>
+<script src="graft.js"></script>
 <style>
   :root{
     --bg:#eef3ec; --panel:#ffffff; --ink:#1a2620; --muted:#5d6b60; --line:#d3ddd0;
@@ -154,6 +155,32 @@
   .pfield .pv{font-size:13.5px;line-height:1.45}
   .ptip{background:var(--bg);border-left:3px solid var(--accent);border-radius:6px;padding:9px 11px;margin-top:10px;font-size:13px}
   .ptox{background:rgba(197,48,48,.1);border-left:3px solid var(--bad);border-radius:6px;padding:8px 11px;margin-top:8px;font-size:12.5px;color:var(--bad);font-weight:600}
+  .plook{background:rgba(183,121,31,.12);border-left:3px solid var(--warn);border-radius:6px;padding:9px 11px;margin-top:8px;font-size:13px;color:var(--ink)}
+  .pbrew{background:rgba(58,125,52,.1);border-left:3px solid var(--accent);border-radius:6px;padding:9px 11px;margin-top:8px;font-size:13px;color:var(--ink);line-height:1.5}
+  /* Εμβολιασμός */
+  .g-olive{background:linear-gradient(135deg,rgba(107,125,47,.14),rgba(58,125,52,.08));border:1px solid var(--olive);border-radius:12px;padding:14px;margin-bottom:12px}
+  .g-olive h3{margin:0 0 8px;font-size:16px;color:var(--olive);display:flex;align-items:center;gap:8px}
+  .g-olive ul{margin:0;padding-left:18px} .g-olive li{margin-bottom:6px;font-size:13.5px;line-height:1.5}
+  .g-terms{display:flex;flex-wrap:wrap;gap:6px}
+  .g-term{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:12.5px;cursor:default}
+  .g-term b{color:var(--accent)}
+  .gmeth{border:1px solid var(--line);border-radius:10px;margin-bottom:8px;overflow:hidden;background:var(--bg)}
+  .gmeth>summary{cursor:pointer;padding:11px 13px;font-weight:700;font-size:14px;list-style:none;display:flex;align-items:center;gap:8px;justify-content:space-between}
+  .gmeth>summary::-webkit-details-marker{display:none}
+  .gmeth>summary .gar{color:var(--muted);transition:transform .2s} .gmeth[open]>summary .gar{transform:rotate(90deg)}
+  .gmeth .gin{padding:0 13px 13px}
+  .gmeth .guse{font-size:12.5px;color:var(--muted);margin-bottom:8px}
+  .gsteps{margin:0;padding-left:20px} .gsteps li{margin-bottom:6px;font-size:13.5px;line-height:1.5}
+  .gbadge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;background:rgba(107,125,47,.18);color:var(--olive)}
+  .g-cal{width:100%;border-collapse:collapse;font-size:13px}
+  .g-cal th,.g-cal td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+  .g-cal tr.olive td{background:rgba(107,125,47,.1)}
+  .g-cal .cr{font-weight:700;white-space:nowrap} .g-cal .pr{white-space:nowrap;color:var(--accent);font-weight:600;font-size:12px}
+  .g-grp{font-weight:700;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin:14px 0 8px}
+  .ptag.ed-safe{color:var(--ok);border-color:var(--ok)} .ptag.ed-caution{color:var(--warn);border-color:var(--warn)}
+  .ptag.ed-toxic{color:var(--bad);border-color:var(--bad)} .ptag.ed-deadly{color:#fff;background:var(--bad);border-color:var(--bad)}
+  #encBanner .mwarn{background:rgba(197,48,48,.12);border:1px solid var(--bad);border-left:4px solid var(--bad);border-radius:10px;padding:11px 13px;margin-bottom:10px;font-size:13px;line-height:1.5;color:var(--ink)}
+  #encBanner .mwarn.info{background:rgba(183,121,31,.12);border-color:var(--warn);border-left-color:var(--warn)}
   @media print{header,.tabs,.no-print,.btnrow,.maptools,#map{display:none!important}.grid,.grid3{grid-template-columns:1fr}.card{break-inside:avoid;box-shadow:none}}
 </style>
 </head>
@@ -171,6 +198,7 @@
   <button data-tab="parcels">🗺️ Αγροτεμάχια &amp; Δέντρα</button>
   <button data-tab="agenda">📒 Ημερολόγιο εργασιών</button>
   <button data-tab="encyclopedia">🌱 Εγκυκλοπαίδεια</button>
+  <button data-tab="graft">🔪 Εμβολιασμός</button>
   <button data-tab="program">🗓️ Πρόγραμμα ΤΝ</button>
   <button data-tab="pheno">🌸 Φαινολογία &amp; Απόδοση</button>
   <button data-tab="protect">🛡️ Φυτοπροστασία &amp; Άρδευση</button>
@@ -344,8 +372,18 @@
     <label class="inline" style="margin-top:10px;cursor:pointer;font-weight:600;color:var(--ink)"><input type="checkbox" id="encPhotos" style="width:auto;flex:0"> <span>📷 Εμφάνιση φωτογραφιών (Wikimedia Commons)</span></label>
     <div class="hint" style="margin:2px 0 0">Οι φωτογραφίες φορτώνουν <b>online</b> μόνο όταν το ενεργοποιήσεις (opt-in) — αλλιώς δεν γίνεται καμία εξωτερική σύνδεση.</div>
   </div>
+  <div id="encBanner"></div>
   <div class="enc-grid" id="encGrid"></div>
   <div id="encEmpty" class="empty" style="display:none">Δεν βρέθηκε φυτό. Δοκίμασε άλλον όρο ή κατηγορία.</div>
+</div>
+
+<!-- ============================ GRAFTING ============================ -->
+<div class="tabpane" id="tab-graft">
+  <div class="card">
+    <h2>🔪 Εμβολιασμός Καρποφόρων <span class="r"><span class="small">Πηγή: Υπ. Γεωργίας Κύπρου (2009)</span></span></h2>
+    <div id="graftIntro" class="hint"></div>
+  </div>
+  <div id="graftBody"></div>
 </div>
 
 <!-- ============================ AUTO PROGRAM ============================ -->
@@ -572,6 +610,7 @@ document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{
   if(b.dataset.tab==='dash') renderDash();
   if(b.dataset.tab==='parcels') setTimeout(initMap,60);
   if(b.dataset.tab==='encyclopedia') renderEncyclopedia();
+  if(b.dataset.tab==='graft') renderGraft();
   if(b.dataset.tab==='program'){fillCropSelect('progCrop'); renderProgram();}
   if(b.dataset.tab==='pheno') {fillCropSelect('phCrop'); renderPheno();}
   if(b.dataset.tab==='protect'){fillCropSelect('prCrop'); renderProtect();}
@@ -1229,6 +1268,35 @@ $('expCsv').onclick=()=>{
 $('printReport').onclick=()=>{renderDash();window.print();};
 $('clearAll').onclick=()=>{if(confirm('Διαγραφή ΟΛΩΝ των δεδομένων; Δεν αναιρείται.')){if(confirm('Σίγουρα; Κράτησε πρώτα αντίγραφο (JSON).')){localStorage.removeItem(LS_KEY);DB={parcels:[],crops:[],logs:[],weather:{},settings:{}};initAll();}}};
 
+/* ================= ΕΜΒΟΛΙΑΣΜΟΣ ================= */
+function renderGraft(){
+  if(!window.GRAFT){ $('graftBody').innerHTML='<div class="empty">Φόρτωση δεδομένων εμβολιασμού…</div>'; return; }
+  const G=GRAFT; $('graftIntro').textContent=G.intro;
+  let h='';
+  h+='<div class="g-olive"><h3>🫒 '+esc(G.olive.title)+'</h3><ul>'+G.olive.points.map(p=>'<li>'+esc(p)+'</li>').join('')+'</ul></div>';
+  h+='<div class="card"><h2>📖 Βασικοί όροι</h2><div class="g-terms">'+G.terms.map(t=>'<span class="g-term"><b>'+esc(t.t)+':</b> '+esc(t.d)+'</span>').join('')+'</div></div>';
+  h+='<div class="card"><h2>🎯 Γιατί κάνουμε εμβολιασμό</h2><ul class="gsteps">'+G.reasons.map(r=>'<li>'+esc(r)+'</li>').join('')+'</ul></div>';
+  h+='<div class="card"><h2>🛠️ Μέθοδοι εμβολιασμού <span class="small">(πάτησε για βήματα)</span></h2>';
+  G.methods.forEach(grp=>{
+    h+='<div class="g-grp">'+esc(grp.group)+'</div>';
+    grp.items.forEach(m=>{
+      h+='<details class="gmeth"><summary><span>'+(m.olive?'🫒 ':'')+esc(m.n)+(m.olive?' <span class="gbadge">ΕΛΙΑ</span>':'')+'</span><span class="gar">▶</span></summary><div class="gin">'+
+         '<div class="guse">'+esc(m.use)+'</div><ol class="gsteps">'+m.steps.map(s=>'<li>'+esc(s)+'</li>').join('')+'</ol>'+
+         (m.tip?'<div class="ptip">💡 '+esc(m.tip)+'</div>':'')+'</div></details>';
+    });
+  });
+  h+='</div>';
+  h+='<div class="card"><h2>✅ Παράγοντες επιτυχίας</h2>'+G.factors.map(f=>'<div class="pfield"><div class="pi">•</div><div class="pc"><div class="pl">'+esc(f.t)+'</div><div class="pv">'+esc(f.d)+'</div></div></div>').join('')+'<div class="note warn" style="margin-top:8px">⚠️ <b>Ασυμφωνία:</b> '+esc(G.incompat)+'</div></div>';
+  h+='<div class="card"><h2>📅 Ημερολόγιο εμβολιασμού ανά δέντρο</h2><div style="overflow-x:auto"><table class="g-cal"><tr><th>Δέντρο</th><th>Εποχή</th><th>Μέθοδος</th></tr>';
+  G.calendar.forEach(c=>{ c.entries.forEach((e,i)=>{
+    h+='<tr class="'+(c.olive?'olive':'')+'">'+(i===0?'<td class="cr" rowspan="'+c.entries.length+'">'+esc(c.crop)+'</td>':'')+'<td class="pr">'+esc(e.p)+'</td><td>'+esc(e.m)+'</td></tr>';
+  }); });
+  h+='</table></div></div>';
+  h+='<div class="card"><h2>🧰 Εργαλεία & υλικά</h2>'+G.tools.map(t=>'<div class="pfield"><div class="pi">🔧</div><div class="pc"><div class="pl">'+esc(t.n)+'</div><div class="pv">'+esc(t.d)+'</div></div></div>').join('')+'</div>';
+  h+='<div class="card"><h2>🌿 Επιλογή & διατήρηση εμβολίων</h2><div class="pfield"><div class="pi">✔️</div><div class="pc"><div class="pl">Επιλογή</div><div class="pv">'+esc(G.scions.select)+'</div></div></div><div class="pfield"><div class="pi">❄️</div><div class="pc"><div class="pl">Διατήρηση</div><div class="pv">'+esc(G.scions.store)+'</div></div></div></div>';
+  $('graftBody').innerHTML=h;
+}
+
 /* ================= ΕΓΚΥΚΛΟΠΑΙΔΕΙΑ ΦΥΤΩΝ ================= */
 let encCat='all', encQ='';
 /* --- Φωτογραφίες (opt-in Wikimedia Commons) --- */
@@ -1271,18 +1339,26 @@ function renderEncCats(){
   el.querySelectorAll('button').forEach(b=>b.onclick=()=>{encCat=b.dataset.c;renderEncyclopedia();});
 }
 function shortSun(s){ if(!s)return '—'; if(/Πλήρης ήλιος/.test(s))return 'Ήλιος'; if(/ημισκι|Ημισκι/.test(s))return 'Ημισκιά'; if(/Έμμεσο|Χαμηλό|Φωτεινό|σκιά|Σκι/.test(s))return 'Σκιά/έμμ.'; return s.split(/[ ,·/]/)[0]; }
+function edBadge(e){ const m={safe:['ed-safe','🟢 Εδώδιμο'],caution:['ed-caution','🟡 Με προσοχή'],toxic:['ed-toxic','🔴 Τοξικό'],deadly:['ed-deadly','☠️ Θανατηφόρο']}; const x=m[e]; return x?`<span class="ptag ${x[0]}">${x[1]}</span>`:''; }
 function renderEncyclopedia(){
   if(!window.PLANTS){ $('encGrid').innerHTML='<div class="empty">Φόρτωση βάσης φυτών…</div>'; return; }
   renderEncCats();
+  const banner=$('encBanner');
+  if(encCat==='mushroom') banner.innerHTML='<div class="mwarn">🍄 <b>ΠΡΟΣΟΧΗ — ΜΑΝΙΤΑΡΙΑ:</b> Πολλά δηλητηριώδη μοιάζουν με εδώδιμα. ΠΟΤΕ μην τρως άγριο μανιτάρι χωρίς ταυτοποίηση από <b>ειδικό μυκητολόγο</b>. Ορισμένα (☠️) είναι θανατηφόρα ακόμη & σε μικρή ποσότητα. Οι πληροφορίες εδώ είναι μόνο ενημερωτικές.</div>';
+  else if(encCat==='wild') banner.innerHTML='<div class="mwarn info">🥗 <b>Άγρια χόρτα:</b> Μάζευε μόνο όσα αναγνωρίζεις με βεβαιότητα, μακριά από δρόμους & ψεκασμένα χωράφια. Ξέπλυνε πολύ καλά πριν το μαγείρεμα.</div>';
+  else if(encCat==='herb') banner.innerHTML='<div class="mwarn info">🌿 <b>Θεραπευτικά βότανα:</b> Οι χρήσεις είναι <b>παραδοσιακά γιατροσόφια</b>, όχι ιατρική συμβουλή. Συμβουλέψου γιατρό/φαρμακοποιό — ειδικά σε εγκυμοσύνη, φάρμακα ή χρόνιες παθήσεις.</div>';
+  else banner.innerHTML='';
   const q=encQ.trim().toLowerCase();
   const list=PLANTS.filter(p=> (encCat==='all'||p.c===encCat) && (!q || p.n.toLowerCase().includes(q) || (p.sci||'').toLowerCase().includes(q)));
   $('encCount').textContent=list.length+' / '+PLANTS.length+' φυτά';
   $('encEmpty').style.display=list.length?'none':'';
   $('encGrid').innerHTML=list.map(p=>{
     const idx=PLANTS.indexOf(p), dif=p.dif==='Εύκολο'?0:p.dif==='Μέτριο'?1:2;
+    const tag1 = p.season ? '📅 '+esc(p.season) : '☀️ '+esc(shortSun(p.sun));
+    const tag2 = p.edt ? edBadge(p.edt) : (p.dif?`<span class="ptag dif${dif}">${esc(p.dif)}</span>`:'');
     return `<div class="pcard" data-i="${idx}"><div class="pthumb"><span class="pe">${p.e}</span></div>
       <div class="pn">${esc(p.n)}</div><div class="psci">${esc(p.sci||'')}</div>
-      <div class="ptags"><span class="ptag">☀️ ${esc(shortSun(p.sun))}</span><span class="ptag dif${dif}">${esc(p.dif||'')}</span></div></div>`;
+      <div class="ptags"><span class="ptag">${tag1}</span>${tag2}</div></div>`;
   }).join('');
   $('encGrid').querySelectorAll('.pcard').forEach(c=>c.onclick=()=>openPlant(+c.dataset.i));
   lazyPhotos();
@@ -1295,6 +1371,8 @@ function openPlant(i){
       <div><h2>${esc(p.n)}</h2><div class="psci">${esc(p.sci||'')} · ${cat.e} ${esc(cat.name)}</div></div>
       <button class="pclose" aria-label="Κλείσιμο">✕</button></div>
     <div class="pbody">
+      ${F('🌍','Βιότοπος / Πού φυτρώνει',p.habitat)}
+      ${F('📅','Εποχή',p.season)}
       ${F('☀️','Έκθεση / Ήλιος',p.sun)}
       ${F('💧','Πότισμα',p.wat)}
       ${F('🪴','Έδαφος',p.soil)}
@@ -1303,10 +1381,15 @@ function openPlant(i){
       ${F('✂️','Κλάδεμα',p.prune)}
       ${F('🌡️','Θερμοκρασία / Αντοχή',p.temp)}
       ${F('🧺','Συγκομιδή',p.harv)}
+      ${F('🍽️','Εδωδιμότητα',p.edible)}
+      ${F('👨‍🍳','Στην κουζίνα',p.culinary)}
+      ${F('🩺','Θεραπευτική χρήση (γιατροσόφι)',p.remedy)}
       ${F('🐛','Εχθροί & Ασθένειες',p.pest)}
       ${F('🤝','Συντροφιά φύτευσης',p.comp)}
+      ${p.brew?`<div class="pbrew">🍵 <b>Αφέψημα / Πώς φτιάχνεται:</b> ${esc(p.brew)}</div>`:''}
+      ${p.lookalike?`<div class="plook">⚠️ <b>Σωσίες / Προσοχή:</b> ${esc(p.lookalike)}</div>`:''}
       ${p.tip?`<div class="ptip">💡 <b>Συμβουλή:</b> ${esc(p.tip)}</div>`:''}
-      ${p.tox?`<div class="ptox">⚠️ ${esc(p.tox)}</div>`:''}
+      ${p.tox?`<div class="ptox">☠️ ${esc(p.tox)}</div>`:''}
     </div></div>`;
   const modal=document.createElement('div'); modal.className='pmodal'; modal.innerHTML=html;
   modal.onclick=e=>{ if(e.target===modal||e.target.closest('.pclose')) modal.remove(); };
@@ -1332,7 +1415,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){ naviga
 
 /* ================= INIT ================= */
 function initAll(){ renderParcels(); refreshTargets(); renderLogs(); renderDash(); fillCropTypeSelect(); }
-$('verLine').textContent='Αγροτεχνίτης ΤΝ v1.3 · © by Chronis Makris · offline PWA · '+Object.keys(CROPS).length+' καλλιέργειες + '+(window.PLANTS?PLANTS.length:0)+' φυτά στην εγκυκλοπαίδεια';
+$('verLine').textContent='Αγροτεχνίτης ΤΝ v1.5 · © by Chronis Makris · offline PWA · '+Object.keys(CROPS).length+' καλλιέργειες + '+(window.PLANTS?PLANTS.length:0)+' φυτά + εμβολιασμός';
 load(); updNet(); initAll();
 </script>
 </body>
