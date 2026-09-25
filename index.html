@@ -1309,10 +1309,17 @@ async function fetchGraftPhoto(q){
   if(q in graftPhotoCache) return graftPhotoCache[q];
   await photoGate();
   try{
-    const u='https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrnamespace=6&gsrlimit=6&gsrsearch='+encodeURIComponent(q)+'&prop=imageinfo&iiprop=url|mime&iiurlwidth=420';
+    const u='https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrnamespace=6&gsrlimit=8&gsrsearch='+encodeURIComponent(q)+'&prop=imageinfo&iiprop=url|mime&iiurlwidth=420';
     const d=await (await fetch(u)).json();
-    const pages=d.query&&d.query.pages?Object.values(d.query.pages):[]; let url=null;
-    for(const p of pages){ const ii=p.imageinfo&&p.imageinfo[0]; if(ii&&/jpeg|png/.test(ii.mime)&&ii.thumburl){url=ii.thumburl;break;} }
+    const pages=d.query&&d.query.pages?Object.values(d.query.pages):[];
+    pages.sort((a,b)=>(a.index||0)-(b.index||0));
+    const toks=q.toLowerCase().split(/\s+/).filter(w=>w.length>3);
+    let url=null, first=null;
+    for(const p of pages){ const ii=p.imageinfo&&p.imageinfo[0]; if(!(ii&&/jpeg|png/.test(ii.mime)&&ii.thumburl)) continue;
+      if(!first) first=ii.thumburl;
+      const t=(p.title||'').toLowerCase();
+      if(toks.length && toks.some(x=>t.includes(x))){ url=ii.thumburl; break; } }
+    url=url||first;
     graftPhotoCache[q]=url; try{localStorage.setItem('agro_graftphotocache',JSON.stringify(graftPhotoCache));}catch(e){} return url;
   }catch(e){ return null; }
 }
