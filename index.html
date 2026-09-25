@@ -15,6 +15,7 @@
 <script src="leaflet.min.js"></script>
 <script src="plants.js"></script>
 <script src="graft.js"></script>
+<script src="tools.js"></script>
 <style>
   :root{
     --bg:#eef3ec; --panel:#ffffff; --ink:#1a2620; --muted:#5d6b60; --line:#d3ddd0;
@@ -209,6 +210,7 @@
   <button data-tab="agenda">📒 Ημερολόγιο εργασιών</button>
   <button data-tab="encyclopedia">🌱 Εγκυκλοπαίδεια</button>
   <button data-tab="graft">🔪 Εμβολιασμός</button>
+  <button data-tab="tools">🧰 Εργαλεία</button>
   <button data-tab="program">🗓️ Πρόγραμμα ΤΝ</button>
   <button data-tab="pheno">🌸 Φαινολογία &amp; Απόδοση</button>
   <button data-tab="protect">🛡️ Φυτοπροστασία &amp; Άρδευση</button>
@@ -379,6 +381,7 @@
     <div class="hint">Πλήρης οδηγός φροντίδας: δέντρα, λαχανικά, αρωματικά, λουλούδια, εσωτερικά φυτά, παχύφυτα, θάμνοι & αναρριχώμενα. Πάτησε ένα φυτό για πότισμα, λίπανση, φύτεμα, κλάδεμα, εχθρούς & tips.</div>
     <input id="encSearch" placeholder="🔎 Αναζήτηση φυτού (όνομα ή επιστημονικό)…" style="margin-bottom:10px">
     <div class="enc-cats" id="encCats"></div>
+    <div class="btnrow" style="margin-top:8px"><button class="btn sec mini" id="encPdf">🖨️ Εξαγωγή PDF (τρέχουσα κατηγορία)</button></div>
     <label class="inline" style="margin-top:10px;cursor:pointer;font-weight:600;color:var(--ink)"><input type="checkbox" id="encPhotos" style="width:auto;flex:0"> <span>📷 Εμφάνιση φωτογραφιών (Wikimedia Commons)</span></label>
     <div class="hint" style="margin:2px 0 0">Οι φωτογραφίες φορτώνουν <b>online</b> μόνο όταν το ενεργοποιήσεις (opt-in) — αλλιώς δεν γίνεται καμία εξωτερική σύνδεση.</div>
   </div>
@@ -396,6 +399,20 @@
     <div class="hint" style="margin:2px 0 0">Opt-in: φορτώνουν <b>online</b> μόνο όταν το ενεργοποιήσεις. Τα σκίτσα δουλεύουν πάντα offline.</div>
   </div>
   <div id="graftBody"></div>
+</div>
+
+<!-- ============================ TOOLS ============================ -->
+<div class="tabpane" id="tab-tools">
+  <div class="card">
+    <h2>🧰 Εργαλεία Γεωργικών Εργασιών <span class="r"><span class="small" id="toolCount"></span></span></h2>
+    <div class="hint">Ό,τι χρησιμοποιούμε στο χωράφι & τον κήπο: χώμα, κλάδεμα, συγκομιδή, άρδευση, ψεκασμός, μηχανήματα. Πάτησε ένα εργαλείο για χρήση & συμβουλές.</div>
+    <input id="toolSearch" placeholder="🔎 Αναζήτηση εργαλείου…" style="margin-bottom:10px">
+    <div class="enc-cats" id="toolCats"></div>
+    <label class="inline" style="margin-top:10px;cursor:pointer;font-weight:600;color:var(--ink)"><input type="checkbox" id="toolPhotos" style="width:auto;flex:0"> <span>📷 Φωτογραφίες εργαλείων (Wikimedia Commons)</span></label>
+    <div class="hint" style="margin:2px 0 0">Opt-in: φορτώνουν <b>online</b> μόνο όταν το ενεργοποιήσεις.</div>
+  </div>
+  <div class="enc-grid" id="toolGrid"></div>
+  <div id="toolEmpty" class="empty" style="display:none">Δεν βρέθηκε εργαλείο.</div>
 </div>
 
 <!-- ============================ AUTO PROGRAM ============================ -->
@@ -623,6 +640,7 @@ document.querySelectorAll('#tabs button').forEach(b=>b.onclick=()=>{
   if(b.dataset.tab==='parcels') setTimeout(initMap,60);
   if(b.dataset.tab==='encyclopedia') renderEncyclopedia();
   if(b.dataset.tab==='graft') renderGraft();
+  if(b.dataset.tab==='tools') renderTools();
   if(b.dataset.tab==='program'){fillCropSelect('progCrop'); renderProgram();}
   if(b.dataset.tab==='pheno') {fillCropSelect('phCrop'); renderPheno();}
   if(b.dataset.tab==='protect'){fillCropSelect('prCrop'); renderProtect();}
@@ -1471,6 +1489,79 @@ document.getElementById('encSearch').oninput=e=>{ encQ=e.target.value; renderEnc
 $('encPhotos').checked=PHOTOS;
 $('encPhotos').onchange=()=>{ PHOTOS=$('encPhotos').checked; try{localStorage.setItem('agro_photos',PHOTOS?'1':'0');}catch(e){} renderEncyclopedia(); };
 
+/* ================= ΕΡΓΑΛΕΙΑ ================= */
+let toolCat='all', toolQ='', TPHOTOS=false;
+try{ TPHOTOS=localStorage.getItem('agro_toolphotos')==='1'; }catch(e){}
+function renderToolCats(){
+  const el=$('toolCats'); if(!el||!window.TOOL_CATS)return;
+  let html='<button data-c="all" class="'+(toolCat==='all'?'active':'')+'">🧰 Όλα</button>';
+  Object.entries(TOOL_CATS).forEach(([k,v])=>{ html+='<button data-c="'+k+'" class="'+(toolCat===k?'active':'')+'">'+v.e+' '+esc(v.name)+'</button>'; });
+  el.innerHTML=html;
+  el.querySelectorAll('button').forEach(b=>b.onclick=()=>{toolCat=b.dataset.c;renderTools();});
+}
+function renderTools(){
+  if(!window.TOOLS){ $('toolGrid').innerHTML='<div class="empty">Φόρτωση εργαλείων…</div>'; return; }
+  renderToolCats();
+  const q=toolQ.trim().toLowerCase();
+  const list=TOOLS.filter(t=> (toolCat==='all'||t.c===toolCat) && (!q || t.n.toLowerCase().includes(q) || (t.use||'').toLowerCase().includes(q)));
+  $('toolCount').textContent=list.length+' / '+TOOLS.length+' εργαλεία';
+  $('toolEmpty').style.display=list.length?'none':'';
+  $('toolGrid').innerHTML=list.map(t=>{ const idx=TOOLS.indexOf(t); const cat=TOOL_CATS[t.c]||{e:'🧰',name:''};
+    return `<div class="pcard" data-i="${idx}"><div class="pthumb" data-q="${esc(t.q||'')}"><span class="pe">${cat.e}</span></div>
+      <div class="pn">${esc(t.n)}</div><div class="psci">${esc(cat.name)}</div></div>`; }).join('');
+  $('toolGrid').querySelectorAll('.pcard').forEach(c=>c.onclick=()=>openTool(+c.dataset.i));
+  const tp=$('toolPhotos'); if(tp){ tp.checked=TPHOTOS; tp.onchange=()=>{TPHOTOS=tp.checked; try{localStorage.setItem('agro_toolphotos',TPHOTOS?'1':'0');}catch(e){} renderTools();}; }
+  loadToolPhotos();
+}
+function loadToolPhotos(){
+  if(!TPHOTOS) return;
+  $('toolGrid').querySelectorAll('.pthumb[data-q]').forEach(async el=>{
+    if(el.dataset.done||!el.dataset.q) return; el.dataset.done='1'; el.classList.add('loading');
+    const url=await fetchGraftPhoto(el.dataset.q); el.classList.remove('loading');
+    if(url){ const img=document.createElement('img'); img.className='pimg'; img.src=url; img.alt=''; img.onerror=()=>{el.innerHTML='<span class="pe">🧰</span>';}; el.innerHTML=''; el.appendChild(img); }
+  });
+}
+function openTool(i){
+  const t=TOOLS[i]; if(!t)return; const cat=TOOL_CATS[t.c]||{e:'🧰',name:''};
+  const html=`<div class="box"><div class="phead"><div class="pe">${cat.e}</div>
+    <div><h2>${esc(t.n)}</h2><div class="psci">${esc(cat.name)}</div></div>
+    <button class="pclose" aria-label="Κλείσιμο">✕</button></div><div class="pbody">
+    <div id="toolPhotoBox"></div>
+    <div class="pfield"><div class="pi">🛠️</div><div class="pc"><div class="pl">Χρήση</div><div class="pv">${esc(t.use)}</div></div></div>
+    ${t.tip?`<div class="ptip">💡 <b>Συμβουλή:</b> ${esc(t.tip)}</div>`:''}</div></div>`;
+  const modal=document.createElement('div'); modal.className='pmodal'; modal.innerHTML=html;
+  modal.onclick=e=>{ if(e.target===modal||e.target.closest('.pclose')) modal.remove(); };
+  function onEsc(ev){ if(ev.key==='Escape'){modal.remove();document.removeEventListener('keydown',onEsc);} }
+  document.addEventListener('keydown',onEsc); document.body.appendChild(modal);
+  if(TPHOTOS && t.q){ fetchGraftPhoto(t.q).then(url=>{ if(url&&modal.parentNode){ const b=modal.querySelector('#toolPhotoBox'); if(b) b.innerHTML='<img class="gphoto-img" src="'+url+'" alt=""><div class="gcredit">📷 Wikimedia Commons</div>'; } }); }
+}
+document.getElementById('toolSearch').oninput=e=>{ toolQ=e.target.value; renderTools(); };
+
+/* ================= ΕΞΑΓΩΓΗ PDF ΕΓΚΥΚΛΟΠΑΙΔΕΙΑΣ ================= */
+function exportEncPdf(){
+  if(!window.PLANTS) return;
+  const q=encQ.trim().toLowerCase();
+  const list=PLANTS.filter(p=> (encCat==='all'||p.c===encCat) && (!q||p.n.toLowerCase().includes(q)||(p.sci||'').toLowerCase().includes(q)));
+  if(!list.length){ alert('Καμία εγγραφή για εξαγωγή.'); return; }
+  const catName=encCat==='all'?'Όλες οι κατηγορίες':((PLANT_CATS[encCat]||{}).name||'');
+  const F=(lbl,val)=> val?`<div class="pl"><b>${lbl}:</b> ${esc(val)}</div>`:'';
+  let body=`<h1>🌿 Εγκυκλοπαίδεια Φυτών — ${esc(catName)}</h1><div class="meta">Αγροτεχνίτης ΤΝ · © by Chronis Makris · ${list.length} φυτά · ${new Date().toLocaleDateString('el-GR')}</div>`;
+  list.forEach(p=>{ body+=`<div class="p"><h2>${p.e} ${esc(p.n)} <span class="sci">${esc(p.sci||'')}</span></h2>`+
+    F('Βιότοπος',p.habitat)+F('Εποχή',p.season)+F('Έκθεση/Ήλιος',p.sun)+F('Πότισμα',p.wat)+F('Έδαφος',p.soil)+F('Λίπανση',p.fert)+F('Φύτεμα',p.plant)+F('Κλάδεμα',p.prune)+F('Θερμοκρασία',p.temp)+F('Συγκομιδή',p.harv)+F('Εδωδιμότητα',p.edible)+F('Κουζίνα',p.culinary)+F('Θεραπευτική χρήση',p.remedy)+F('Αφέψημα',p.brew)+F('Εχθροί & Ασθένειες',p.pest)+F('Συντροφιά',p.comp)+F('Σωσίες/Προσοχή',p.lookalike)+
+    (p.tip?`<div class="pl tip"><b>💡 Συμβουλή:</b> ${esc(p.tip)}</div>`:'')+(p.tox?`<div class="pl tox"><b>⚠️</b> ${esc(p.tox)}</div>`:'')+`</div>`; });
+  const win=window.open('','_blank');
+  if(!win){ alert('Για την εξαγωγή PDF επίτρεψε τα αναδυόμενα παράθυρα (pop-ups) σε αυτή τη σελίδα.'); return; }
+  win.document.write('<!doctype html><html lang="el"><head><meta charset="utf-8"><title>Εγκυκλοπαίδεια Φυτών</title><style>'+
+    'body{font-family:system-ui,Segoe UI,Arial,sans-serif;color:#1a2620;max-width:820px;margin:0 auto;padding:22px;font-size:13px;line-height:1.5}'+
+    'h1{font-size:20px;color:#3a7d34;margin:0 0 4px}.meta{color:#5d6b60;font-size:12px;margin-bottom:16px;border-bottom:2px solid #3a7d34;padding-bottom:8px}'+
+    '.p{break-inside:avoid;border:1px solid #d3ddd0;border-radius:8px;padding:10px 12px;margin-bottom:10px}'+
+    '.p h2{font-size:15px;margin:0 0 6px;color:#3a7d34}.p .sci{font-style:italic;font-weight:400;color:#5d6b60;font-size:12px}'+
+    '.pl{margin:2px 0}.pl.tip{background:#eef3ec;padding:5px 8px;border-radius:5px;margin-top:5px}.pl.tox{color:#c53030;font-weight:600}'+
+    '</style></head><body>'+body+'<scr'+'ipt>window.onload=function(){setTimeout(function(){window.print();},300);}<\/scr'+'ipt></body></html>');
+  win.document.close();
+}
+$('encPdf').onclick=exportEncPdf;
+
 /* ================= PWA (εγκατάσταση + offline) ================= */
 let deferredPrompt=null;
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;$('installBtn').style.display='inline-block';});
@@ -1480,7 +1571,7 @@ if('serviceWorker' in navigator && location.protocol.startsWith('http')){ naviga
 
 /* ================= INIT ================= */
 function initAll(){ renderParcels(); refreshTargets(); renderLogs(); renderDash(); fillCropTypeSelect(); }
-$('verLine').textContent='Αγροτεχνίτης ΤΝ v1.5 · © by Chronis Makris · offline PWA · '+Object.keys(CROPS).length+' καλλιέργειες + '+(window.PLANTS?PLANTS.length:0)+' φυτά + εμβολιασμός';
+$('verLine').textContent='Αγροτεχνίτης ΤΝ v2.0 · © by Chronis Makris · offline PWA · '+(window.PLANTS?PLANTS.length:0)+' φυτά · '+(window.TOOLS?TOOLS.length:0)+' εργαλεία · εμβολιασμός · PDF';
 load(); updNet(); initAll();
 </script>
 </body>
