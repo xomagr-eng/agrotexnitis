@@ -120,6 +120,28 @@
     .card{padding:11px} #map{height:240px}
     .kpi{grid-template-columns:1fr 1fr} .tabs button{font-size:13px;padding:7px 10px}
   }
+  /* ===== Οριζόντια συσκευή (γύρισμα κινητού/ταμπλέτας) — «μεγαλύτερη οθόνη» ===== */
+  /* Σε touch συσκευή που γυρίζει στο πλάι, ξαναφέρνουμε πολυστήλη διάταξη & αξιοποιούμε το πλάτος */
+  @media (orientation:landscape) and (pointer:coarse) and (min-width:700px){
+    .grid{grid-template-columns:320px 1fr}
+    .enc-grid{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}
+    .season-grid{grid-template-columns:repeat(4,1fr)}
+    .kpi{grid-template-columns:repeat(auto-fit,minmax(120px,1fr))}
+    .weatherrow{grid-template-columns:repeat(7,1fr)}
+  }
+  @media (orientation:landscape) and (pointer:coarse) and (min-width:940px){
+    .grid3{grid-template-columns:300px 1fr 280px}
+  }
+  /* Χαμηλό ύψος οριζόντια (κινητό στο πλάι): μικρότερη κεφαλίδα = περισσότερο περιεχόμενο */
+  @media (orientation:landscape) and (pointer:coarse) and (max-height:520px){
+    header{padding:6px 14px} header h1{font-size:15px} header .logo{font-size:20px}
+    .tabs{top:42px;padding:4px 8px} .tabs button{padding:6px 12px}
+    .wrap{padding:8px 12px} .card{padding:11px;margin-bottom:9px} #map{height:200px}
+  }
+  /* Πλωτό κουμπί πλήρους οθόνης — εμφανίζεται μόνο σε κινητό/ταμπλέτα οριζόντια */
+  #fsBtn{display:none;position:fixed;right:12px;bottom:12px;z-index:30;width:46px;height:46px;border-radius:50%;border:none;background:var(--accent);color:#fff;font-size:20px;box-shadow:var(--shadow);cursor:pointer;opacity:.92;align-items:center;justify-content:center}
+  #fsBtn:active{transform:scale(.94)}
+  @media (orientation:landscape) and (pointer:coarse){ #fsBtn{display:flex} }
   /* Μηνιαίος οδηγός */
   .season-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
   .season-col{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px}
@@ -541,6 +563,7 @@
 
 </div><!-- /wrap -->
 <footer style="text-align:center;padding:16px 12px;color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);margin-top:6px">© by Chronis Makris · Αγροτεχνίτης ΤΝ 🌿</footer>
+<button id="fsBtn" aria-label="Πλήρης οθόνη">⛶</button>
 
 <script>
 /* ================= ΓΝΩΣΙΑΚΗ ΒΑΣΗ ΚΑΛΛΙΕΡΓΕΙΩΝ (Ελλάδα) =================
@@ -1613,6 +1636,23 @@ window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPro
 $('installBtn').onclick=async()=>{ if(!deferredPrompt){alert('Για εγκατάσταση στο κινητό: άνοιξε τη σελίδα σε Chrome/Safari και επίλεξε «Προσθήκη στην αρχική οθόνη».');return;} deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt=null; $('installBtn').style.display='none'; };
 window.addEventListener('appinstalled',()=>{$('installBtn').style.display='none';});
 if('serviceWorker' in navigator && location.protocol.startsWith('http')){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
+
+/* Πλήρης οθόνη σε οριζόντιο γύρισμα (όπως πολλές εφαρμογές) */
+(function(){
+  const b=$('fsBtn'); if(!b) return;
+  const isFs=()=>document.fullscreenElement||document.webkitFullscreenElement;
+  const sync=()=>{ b.textContent=isFs()?'✕':'⛶'; b.title=isFs()?'Έξοδος από πλήρη οθόνη':'Πλήρης οθόνη'; };
+  b.onclick=async()=>{
+    try{
+      if(isFs()){ (document.exitFullscreen||document.webkitExitFullscreen).call(document); }
+      else{ const el=document.documentElement; await (el.requestFullscreen||el.webkitRequestFullscreen).call(el); }
+    }catch(e){}
+    setTimeout(sync,60);
+  };
+  document.addEventListener('fullscreenchange',sync);
+  document.addEventListener('webkitfullscreenchange',sync);
+  sync();
+})();
 
 /* ================= INIT ================= */
 function initAll(){ renderParcels(); refreshTargets(); renderLogs(); renderDash(); fillCropTypeSelect(); }
