@@ -37,7 +37,8 @@
   html,body{margin:0;padding:0}
   body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.45}
   header{background:linear-gradient(135deg,var(--accent),var(--olive));color:#fff;padding:12px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:20;box-shadow:var(--shadow)}
-  header .logo{font-size:26px}
+  header .logo{width:40px;height:40px;border-radius:9px;object-fit:cover;box-shadow:0 1px 4px rgba(0,0,0,.25);flex:0 0 auto}
+  @media (orientation:landscape) and (pointer:coarse) and (max-height:520px){ header .logo{width:32px;height:32px} }
   header h1{font-size:18px;margin:0;font-weight:800}
   header .sub{font-size:12px;opacity:.92}
   header .spacer{flex:1}
@@ -226,7 +227,7 @@
 </head>
 <body>
 <header>
-  <div class="logo">🌿</div>
+  <img class="logo" src="icon-192.png" alt="Αγροτεχνίτης ΤΝ" width="40" height="40">
   <div><h1>Αγροτεχνίτης ΤΝ</h1><div class="sub">Έξυπνη γεωργική διαχείριση — Ελιές · Δέντρα · Κηπευτικά</div></div>
   <div class="spacer"></div>
   <button class="status" id="installBtn" style="cursor:pointer;border:none">📲 Εγκατάσταση</button>
